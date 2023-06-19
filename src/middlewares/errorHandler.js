@@ -13,19 +13,22 @@ function boomErrorHandler(err, req, res, next) {
   else next(err)
 }
 
-function errorHandler(err, req, res, next) {
-  res.status(500).send(err.message)
-}
 
 function ORMErrorHandler(err, req, res, next) {
   if (err instanceof ValidationError) {
+    const [firstError] = err.errors;
     res.status(409).json({
       statusCode: 409,
-      message: err.name,
+      message: firstError.message,
       errors: err.errors
     })
   }
-  next(err);
+  else next(err);
+}
+
+function errorHandler(err, req, res, next) {
+  const message = err.message || err.name;
+  res.status(500).send(message)
 }
 
 module.exports = { logError, boomErrorHandler, errorHandler, ORMErrorHandler };

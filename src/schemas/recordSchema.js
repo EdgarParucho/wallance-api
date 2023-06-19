@@ -1,21 +1,43 @@
 const Joi = require('joi');
 
-const _id = Joi.string().uuid();
-const amount = Joi.number().min(0.1);
+const id = Joi.string().uuid();
+const amount = Joi.number();
 const date = Joi.date();
 const note = Joi.string();
-const sourceID = _id;
-const targetID = _id;
+const tag = Joi.string();
+const fundID = id;
 const type = Joi.number();
-const userID = _id;
+const userID = id;
 
 const createRecordSchema = Joi.object({
   amount: amount.required(),
   date: date.required(),
-  note: note.required(),
-  sourceID: sourceID.required(),
-  targetID: targetID.required(),
+  note,
+  tag,
+  fundID: fundID.required(),
   type: type.required(),
+  userID: userID.required()
+});
+
+const createAssignmentSchema = Joi.object({
+  amount: amount.required(),
+  date: date.required(),
+  note,
+  tag,
+  sourceID: fundID.required(),
+  targetID: fundID.required(),
+  type: type.required().equal(0),
+  userID: userID.required()
+});
+
+const updateAssignmentSchema = Joi.object({
+  amount: amount.required(),
+  date: date.required(),
+  note,
+  tag,
+  sourceID: fundID.required(),
+  targetID: fundID.required(),
+  type: type.required().equal(0),
   userID: userID.required()
 });
 
@@ -27,14 +49,20 @@ const updateRecordSchema = Joi.object({
   amount,
   date,
   note,
-  sourceID,
-  targetID,
+  tag,
+  fundID,
   type
 });
 
 const alterRecordSchema = Joi.object({
-  _id: _id.required(),
-  userID: userID.required()
+  id: id.required(),
 });
 
-module.exports = { createRecordSchema, getRecordsSchema, updateRecordSchema, alterRecordSchema };
+module.exports = {
+  createRecordSchema,
+  createAssignmentSchema,
+  getRecordsSchema,
+  updateRecordSchema,
+  updateAssignmentSchema,
+  alterRecordSchema,
+};

@@ -10,14 +10,13 @@ const LocalStrategy = new Strategy(
     try {
 
       const data = await models.User.findOne({ where: { email: providedEmail }, include: ['funds'] });
-      if (!data) done(boom.unauthorized(), false);
+      if (!data) return done(boom.unauthorized("The email-password combination is not valid to log you in."), false);
       const passwordMatch = await bcrypt.compare(providedPassword, data.password);
-      if (!passwordMatch) done(boom.unauthorized(), false);
+      if (!passwordMatch) return done(boom.unauthorized("The email-password combination is not valid to log you in."), false);
 
       const { _id, email, creditSources, funds } = data;
       const user = { _id, email, creditSources, funds };
-      done(null, user);
-
+      return done(null, user);
     } catch (error) {
       done(error, false);
     }

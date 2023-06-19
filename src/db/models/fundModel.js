@@ -3,8 +3,7 @@ const { USER_TABLE } = require('./userModel');
 const FUND_TABLE = 'funds';
 
 const fundSchema = {
-  _id: { allowNull: false, primaryKey: true, unique: true, type: DataTypes.UUID, defaultValue: Sequelize.UUIDV4 },
-  balance: { allowNull: false, type: DataTypes.FLOAT, defaultValue: 0, validate: { min: 0 } },
+  id: { allowNull: false, primaryKey: true, unique: true, type: DataTypes.UUID, defaultValue: Sequelize.UUIDV4 },
   name: { allowNull: false, type: DataTypes.STRING },
   description: { allowNull: false, type: DataTypes.STRING },
   isDefault: { allowNull: false, type: DataTypes.BOOLEAN, field: 'is_default' },
@@ -14,7 +13,7 @@ const fundSchema = {
     type: DataTypes.UUID,
     references: {
       model: USER_TABLE,
-      key: '_id',
+      key: 'id',
       required: true
     },
     onDelete: 'CASCADE'
@@ -24,8 +23,8 @@ const fundSchema = {
 class Fund extends Model {
   static associate(models) {
     this.belongsTo(models.User, { as: 'user', foreignKey: 'userID' });
-    this.hasMany(models.Record, { as: 'source', foreignKey: 'sourceID' })
-    this.hasMany(models.Record, { as: 'target', foreignKey: 'targetID' })
+    this.hasMany(models.Record, { as: 'records', foreignKey: 'fundID' })
+    this.hasMany(models.FundState, { as: 'fundStates', foreignKey: 'fundID' })
   }
 
   static config(sequelize) {

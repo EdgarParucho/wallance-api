@@ -3,20 +3,34 @@ const { Model, Sequelize, DataTypes } = require('sequelize');
 const USER_TABLE = 'users';
 
 const userSchema = {
-  _id: { allowNull: false, primaryKey: true, unique: true, type: DataTypes.UUID, defaultValue: Sequelize.UUIDV4 },
-  email: { allowNull: false, type: DataTypes.STRING, unique: true },
-  password: { allowNull: false, type: DataTypes.STRING },
-  creditSources: { allowNull: false, type: DataTypes.JSON, field: 'credit_sources' }
+  id: {
+    allowNull: false,
+    primaryKey: true,
+    unique: true,
+    type: DataTypes.UUID,
+    defaultValue: Sequelize.UUIDV4
+  },
+  email: {
+    allowNull: false,
+    type: DataTypes.STRING,
+    unique: true,
+    validate: {
+      isEmail: true,
+    },
+  },
+  password: {
+    allowNull: false,
+    type: DataTypes.STRING,
+    validate: {
+      len: [8]
+    }
+  },
 }
 
 class User extends Model{
   static associate(models) {
-    /* 1 to 1 Example:
-      this.belongsTo(Model, Options);
-      this.belongsTo(models.OtherModel, { as: 'OptionalAlias' });
-    */
     this.hasMany(models.Fund, { as: 'funds', foreignKey: 'userID' })
-    this.hasMany(models.Record, { as: 'records', foreignKey: 'user_id' })
+    this.hasMany(models.Record, { as: 'records', foreignKey: 'userID' })
   }
   static config(sequelize) {
     return {

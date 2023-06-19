@@ -5,7 +5,9 @@ const {
   createRecordSchema,
   updateRecordSchema,
   getRecordsSchema,
-  alterRecordSchema
+  alterRecordSchema,
+  createAssignmentSchema,
+  updateAssignmentSchema
 } = require('../schemas/recordSchema');
 
 const router = express.Router();
@@ -38,33 +40,75 @@ router.post('/',
     } catch (error) {
       next(error);
     }
-  })
+  }
+);
 
-router.patch('/:userID/:_id',
+router.post('/assignment',
+  validatorHandler(createAssignmentSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const { body } = req;
+      const data = await service.assign(body);
+      res.status(201).json(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.put('/assignment/:id',
+  validatorHandler(updateAssignmentSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { body } = req;
+      const data = await service.updateAssignment(id, body);
+      res.status(200).json(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.patch('/:userID/:id',
   validatorHandler(alterRecordSchema, 'params'),
   validatorHandler(updateRecordSchema, 'body'),
   async (req, res, next) => {
     try {
-      const { userID, _id } = req.params;
-      const { body } = req;
-      const data = await service.update({ userID, _id, body });
-      res.json(data);
-    } catch (error) {
-      next(error);
-    }
-  })
-
-router.delete('/:userID/:_id',
-  validatorHandler(alterRecordSchema, 'params'),
-  async (req, res, next) => {
-    try {
-      const { userID, _id } = req.params;
-      const data = await service.delete({ userID, _id });
+      const { id } = req.params;
+      const body = req.body;
+      const data = await service.update({ id, body });
       res.json(data);
     } catch (error) {
       next(error);
     }
   }
-)
+);
 
-module.exports = { recordRouter: router, records: service.records };
+router.delete('/:id',
+  validatorHandler(alterRecordSchema, 'params'),
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const data = await service.delete({ id });
+      res.json(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.delete('/assignment/:id',
+  validatorHandler(alterRecordSchema, 'params'),
+  async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const data = await service.deleteAssignment({ id });
+      res.json(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+module.exports = { recordRouter: router };

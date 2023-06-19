@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-const _id = Joi.string().uuid();
+const id = Joi.string().uuid();
 const email = Joi.string().email();
 const creditSources = Joi.array();
 const password = Joi.string().length(8);
@@ -27,11 +27,11 @@ const updateUserSchema = Joi.object({
 });
 
 const deleteUserSchema = Joi.object({
-  _id: _id.required()
+  id: id.required()
 });
 
 const alterUserAuthSchema = Joi.object({
-  _id: _id.required()
+  id: id.required()
 });
 
 module.exports = {

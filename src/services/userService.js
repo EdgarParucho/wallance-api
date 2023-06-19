@@ -57,11 +57,10 @@ class UserService {
     const hash = await bcrypt.hash(password, 10);
     // * https://wallance.atlassian.net/browse/WAL-53
     const creditSources = [
-      { _id: uuiv4(), name: 'Main' },
-      { _id: uuiv4(), name: 'Secondary' },
-      { _id: uuiv4(), name: 'Occasional' }
+      { id: uuiv4(), name: 'Main' },
+      { id: uuiv4(), name: 'Secondary' },
+      { id: uuiv4(), name: 'Occasional' }
     ];
-    console.log(creditSources);
     const defaultFund = {
       name: 'Base',
       description: 'For fixed expenses, and distribute to other funds.',
@@ -73,26 +72,26 @@ class UserService {
     return 'User created successfully.';
   }
 
-  async update({ _id, OTP, body }) {
+  async update({ id, OTP, body }) {
     const OTPIsValid = this.OTPIsValid(OTP);
     if (!OTPIsValid) throw boom.unauthorized('The provided OTP is not valid.');
-    const response = await models.User.update(body, { where: { _id }, returning: ['_id', 'email', 'credit_sources'] });
+    const response = await models.User.update(body, { where: { id }, returning: ['id', 'email', 'credit_sources'] });
     const [totalAffectedRows, [data]] = response;
     if (totalAffectedRows === 0) throw boom.notFound('User not found.')
     return data;
   }
 
-  async delete({ OTP, _id }) {
+  async delete({ OTP, id }) {
     const OTPIsValid = this.OTPIsValid(OTP);
     if (!OTPIsValid) throw boom.unauthorized('The provided OTP is not valid.');
 
-    const deletingUser = await models.User.findByPk(_id);
+    const deletingUser = await models.User.findByPk(id);
     if (!deletingUser) throw boom.notFound('Could not found the requested user.');
-    await models.Record.destroy({ where: { userID: _id } });
-    // await models.Fund.destroy({ where: { userID: _id } })
+    await models.Record.destroy({ where: { userID: id } });
+    // await models.Fund.destroy({ where: { userID: id } })
 
     await deletingUser.destroy({ include: ["funds"] });
-    return _id;
+    return id;
   }
 }
 

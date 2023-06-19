@@ -14,8 +14,8 @@ class FundService {
     return data;
   }
 
-  async update(userID, _id, body) {
-    const response = await Fund.update({ ...body }, { where: { _id, userID }, returning: true });
+  async update(userID, id, body) {
+    const response = await Fund.update({ ...body }, { where: { id, userID }, returning: true });
 
     const [totalAffectedRows, affectedRows] = response;
     if (totalAffectedRows < 1) throw boom.notFound('Could not found the record to update.');
@@ -23,26 +23,6 @@ class FundService {
     const [data] = affectedRows;
     return data;
   }
-
-  async findPreviousState() {
-    /**
-     ** This code uses the findOne() method of the Sequelize model to find the row with the closest date to the dynamic value.
-     ** The order option is used to order the rows by the absolute difference between the date column and the dynamic value.
-     ** The Sequelize.fn() function is used to call SQL functions like ABS() and DATEDIFF().
-     *  You can replace Model, date_column, and dynamic_value with your own values.
-     */
-    const data = await models.Fund.findOne({
-      order: [
-        [Sequelize.fn('ABS', Sequelize.fn('DATEDIFF', Sequelize.col('date_column'), dynamic_value)), 'ASC']
-      ]
-    });
-    return data;
-    // const row = await Model.findOne({
-    //   order: [
-    //     [Sequelize.fn('ABS', Sequelize.fn('DATEDIFF', Sequelize.col('date_column'), dynamic_value)), 'ASC']
-    //   ]
-    // });
-  }  
 
   async delete({ userID, fundID, defaultFundID }) {
     const deletingFund = await Fund.findByPk(fundID);
