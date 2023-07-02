@@ -1,23 +1,12 @@
 const express = require('express');
 const RecordService = require('../services/recordService');
 const validatorHandler = require('../middlewares/validatorHandler');
-
-const {
-  createRecordSchema,
-  updateRecordSchema,
-  getRecordsSchema,
-  alterRecordSchema,
-} = require('../schemas/recordSchema');
+const { createRecordSchema, updateRecordSchema, alterRecordSchema } = require('../schemas/recordSchema');
 
 const router = express.Router();
 const service = new RecordService();
 
-router.get('/:userFunds',
-  (req, res, next) => {
-    req.params = { userFunds: req.params.userFunds.split(',') };
-    next();
-  },
-  validatorHandler(getRecordsSchema, 'params'),
+router.get('/',
   async (req, res, next) => {
     try {
       const userID = req.user.sub;
@@ -71,4 +60,4 @@ router.delete('/:id',
   }
 );
 
-module.exports = { recordRouter: router };
+module.exports = router;

@@ -23,14 +23,15 @@ async (req, res, next) => {
   }
 })
 
-router.patch('/:userID/:_id',
+router.patch('/:id',
 validatorHandler(fundIDSchema, 'params'),
 validatorHandler(updateFundSchema, 'body'),
 async (req, res, next) => {
   try {
-    const { userID, _id } = req.params;
+    const userID = req.user.sub;
+    const { id } = req.params;
     const { body } = req;
-    const data = await service.update(userID, _id, body);
+    const data = await service.update(userID, id, body);
     res.json(data);
   } catch (error) {
     next(error);
@@ -50,4 +51,4 @@ async (req, res, next) => {
   }
 })
 
-module.exports = { fundRouter: router, funds: service.funds, fundService: service };
+module.exports = router;

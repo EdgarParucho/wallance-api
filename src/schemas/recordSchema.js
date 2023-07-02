@@ -13,8 +13,8 @@ const userID = id;
 const createRecordSchema = Joi.object({
   amount: amount.required(),
   date: date.required(),
-  note,
-  tag,
+  note: note.required(),
+  tag: tag.required(),
   fundID: fundID.required(),
   type: type.required(),
   userID: userID.required(),

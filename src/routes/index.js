@@ -1,8 +1,8 @@
 const express = require('express');
 const passport = require('passport');
-const { fundRouter } = require('./fundRouter');
-const { recordRouter } = require('./recordRouter');
-const { userRouter } = require('./userRouter');
+const fundRouter = require('./fundRouter');
+const recordRouter = require('./recordRouter');
+const userRouter = require('./userRouter');
 const sessionRouter = require('./sessionRouter');
 
 function routerAPI(app) {

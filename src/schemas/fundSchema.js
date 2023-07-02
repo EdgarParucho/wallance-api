@@ -21,7 +21,6 @@ const updateFundSchema = Joi.object({
 });
 
 const fundIDSchema = Joi.object({
-  userID: userID.required(),
   id: id.required()
 });
 

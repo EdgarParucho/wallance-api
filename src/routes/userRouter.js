@@ -1,13 +1,7 @@
 const express = require('express');
 const UserService = require('../services/userService.js');
 const validatorHandler = require('../middlewares/validatorHandler');
-const {
-  preValidationSchema,
-  createUserSchema,
-  updateUserSchema,
-  deleteUserSchema,
-  alterUserAuthSchema
-} = require('../schemas/userSchema');
+const { preValidationSchema, createUserSchema, updateUserSchema, deleteUserSchema } = require('../schemas/userSchema');
 
 const router = express.Router();
 const service = new UserService();
@@ -17,8 +11,9 @@ router.post('/pre-validate',
   async (req, res, next) => {
     try {
       const { email } = req.body;
-      const mustBeNew = (req.query.mustBeNew === 'true');
-      const feedback = await service.preValidation(email, mustBeNew);
+      const action = req.query.action;
+      const emailIsNew = (req.query.emailIsNew === 'true');
+      const feedback = await service.preValidation({ email, emailIsNew, action });
       res.send(feedback);
     } catch (error) {
       next(error);
@@ -30,8 +25,8 @@ router.post('/pre-validate',
 //   validatorHandler(preValidationSchema, 'body'),
 //   async (req, res, next) => {
 //     try {
-//       const mustBeNew = true;
-//       const feedback = await service.preValidation(email, mustBeNew);
+//       const emailIsNew = true;
+//       const feedback = await service.preValidation(email, emailIsNew);
 //       res.send(feedback);
 //     } catch (error) {
 //       next(error);
@@ -52,15 +47,14 @@ router.post('/',
   }
 )
 
-router.patch('/:_id',
-  validatorHandler(alterUserAuthSchema, 'params'),
+router.patch('/',
   validatorHandler(updateUserSchema, 'body'),
   async (req, res, next) => {
     try {
-      const { _id } = req.params;
+      const { sub: id } = req.user;
       const { body } = req;
       const OTP = Number(req.header('OTP'))
-      const data = await service.update({ _id, OTP, body });
+      const data = await service.update({ id, OTP, body });
       res.status(200).json(data);
     } catch (error) {
       next(error);
@@ -68,13 +62,13 @@ router.patch('/:_id',
   }
 )
 
-  router.delete('/:_id',
+  router.delete('/',
   validatorHandler(deleteUserSchema, 'params'),
   async (req, res, next) => {
     try {
-      const { _id } = req.params;
+      const { sub: id } = req.user;
       const OTP = Number(req.header('OTP'));
-      const data = await service.delete({ OTP, _id });
+      const data = await service.delete({ OTP, id });
       res.json(data);
     } catch (error) {
       next(error);
@@ -82,4 +76,4 @@ router.patch('/:_id',
   }
 )
 
-module.exports = { userRouter: router, users: service.users };
+module.exports = router;

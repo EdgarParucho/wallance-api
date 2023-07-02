@@ -4,7 +4,7 @@ const id = Joi.string().uuid();
 const email = Joi.string().email();
 const creditSources = Joi.array();
 const password = Joi.string().length(8);
-const OTP = Joi.number().required().min(1000).max(9999);
+const OTP = Joi.string().uuid().required();
 
 const getUserSchema = Joi.object({
   email: email.required()
@@ -30,15 +30,10 @@ const deleteUserSchema = Joi.object({
   id: id.required()
 });
 
-const alterUserAuthSchema = Joi.object({
-  id: id.required()
-});
-
 module.exports = {
   getUserSchema,
   createUserSchema,
   updateUserSchema,
   deleteUserSchema,
-  alterUserAuthSchema,
   preValidationSchema
 };

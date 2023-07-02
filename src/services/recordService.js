@@ -32,7 +32,7 @@ class RecordService {
   async validateFundExistance({ id, transaction }) {
     const fund = await models.Fund.findByPk(id, { transaction });
     if (fund === null) throw boom.notFound("Could not find the requested Fund.")
-    return
+    return fund;
   };
 
   async getFundRecords({ fundID, transaction }) {
@@ -116,20 +116,22 @@ class RecordService {
   };
 
 
-
   async create(body) {
 
     body.date = new Date(body.date);
     body.date.setSeconds(1);
     await this.validateDateAvailability(body);
-    await this.validateFundExistance({ id: body.fundID });
+    const fund = await this.validateFundExistance({ id: body.fundID });
 
+    if (body.type === 1 && !fund.dataValues.isDefault) throw boom.conflict("Credits must be saved in the default fund");
     if (body.type === 1) return await models.Record.create(body);
+
     if (body.type !== 1) await this.validateBalanceAvailability({ fundID: body.fundID }, { includingRecord: body });
     if (body.type === 2) return await models.Record.create(body);
+    
     if (body.amount > 0) throw boom.conflict("Amount must be provided in negative for assignment records.");
-
     await this.validateFundExistance({ id: body.otherFundID });
+
     const correlatedRecordBody = this.defineCorrelatedRecord({ baseData: body });
 
     const data = sequelize.transaction(async(transaction) => {
