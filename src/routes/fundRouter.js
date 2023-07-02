@@ -37,14 +37,13 @@ async (req, res, next) => {
   }
 })
 
-router.delete('/:userID/:_id',
-validatorHandler(fundIDSchema, 'params'),
-validatorHandler(deleteFundSchema, 'body'),
+router.delete('/:id',
+validatorHandler(deleteFundSchema, 'params'),
 async (req, res, next) => {
   try {
-    const { userID, _id } = req.params;
-    const { defaultFundID } = req.body;
-    const data = await service.delete({ userID, fundID: _id, defaultFundID });
+    const { id } = req.params;
+    const { sub: userID } = req.user;
+    const data = await service.delete({ userID, id });
     res.json(data);
   } catch (error) {
     next(error)

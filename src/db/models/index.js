@@ -7,10 +7,10 @@ function setupModels(sequelize) {
   User.init(userSchema, User.config(sequelize));
   Record.init(recordSchema, Record.config(sequelize));
   Fund.init(fundSchema, Fund.config(sequelize));
-  FundState.init(fundStateSchema, FundState.config(sequelize));
+  // FundState.init(fundStateSchema, FundState.config(sequelize));
   User.associate(sequelize.models);
   Fund.associate(sequelize.models);
-  FundState.associate(sequelize.models);
+  // FundState.associate(sequelize.models);
   Record.associate(sequelize.models);
 }
 

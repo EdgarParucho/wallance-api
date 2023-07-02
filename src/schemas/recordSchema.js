@@ -6,6 +6,7 @@ const date = Joi.date();
 const note = Joi.string();
 const tag = Joi.string();
 const fundID = id;
+const otherFundID = id;
 const type = Joi.number();
 const userID = id;
 
@@ -16,33 +17,8 @@ const createRecordSchema = Joi.object({
   tag,
   fundID: fundID.required(),
   type: type.required(),
-  userID: userID.required()
-});
-
-const createAssignmentSchema = Joi.object({
-  amount: amount.required(),
-  date: date.required(),
-  note,
-  tag,
-  sourceID: fundID.required(),
-  targetID: fundID.required(),
-  type: type.required().equal(0),
-  userID: userID.required()
-});
-
-const updateAssignmentSchema = Joi.object({
-  amount: amount.required(),
-  date: date.required(),
-  note,
-  tag,
-  sourceID: fundID.required(),
-  targetID: fundID.required(),
-  type: type.required().equal(0),
-  userID: userID.required()
-});
-
-const getRecordsSchema = Joi.object({
-  userFunds: Joi.array().min(1).required()
+  userID: userID.required(),
+  otherFundID
 });
 
 const updateRecordSchema = Joi.object({
@@ -51,7 +27,8 @@ const updateRecordSchema = Joi.object({
   note,
   tag,
   fundID,
-  type
+  otherFundID,
+  type,
 });
 
 const alterRecordSchema = Joi.object({
@@ -60,9 +37,6 @@ const alterRecordSchema = Joi.object({
 
 module.exports = {
   createRecordSchema,
-  createAssignmentSchema,
-  getRecordsSchema,
   updateRecordSchema,
-  updateAssignmentSchema,
   alterRecordSchema,
 };

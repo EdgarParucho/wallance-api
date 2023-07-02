@@ -24,7 +24,7 @@ class Fund extends Model {
   static associate(models) {
     this.belongsTo(models.User, { as: 'user', foreignKey: 'userID' });
     this.hasMany(models.Record, { as: 'records', foreignKey: 'fundID' })
-    this.hasMany(models.FundState, { as: 'fundStates', foreignKey: 'fundID' })
+    this.hasMany(models.Record, { as: 'assignments', foreignKey: 'otherFundID' })
   }
 
   static config(sequelize) {

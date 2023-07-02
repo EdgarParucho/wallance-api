@@ -14,8 +14,8 @@ router.post('/start',
     try {
       const user = req.user;
       const secret = config.jwtSecret;
-      const payload = { sub: user._id };
-      const token = jwt.sign(payload, secret);
+      const payload = { sub: user.id };
+      const token = await jwt.sign(payload, secret);
       res.json({ user, token });
     } catch (error) {
       next(error);

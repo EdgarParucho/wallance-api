@@ -1,49 +1,69 @@
 const boom = require('@hapi/boom')
 const { models } = require('../libs/sequelize');
 const { Op } = require('sequelize');
+const sequelize = require('../libs/sequelize');
 
 const { Fund, Record } = models;
 
+const RecordService = require('./recordService');
+const recordService = new RecordService();
+
 class FundService {
 
-  constructor() {
-  }
+  constructor() {}
 
   async create(body) {
     const data = await Fund.create(body);
     return data;
-  }
+  };
 
   async update(userID, id, body) {
-    const response = await Fund.update({ ...body }, { where: { id, userID }, returning: true });
-
+    const response = await Fund.update(body, { where: { id, userID }, returning: true });
     const [totalAffectedRows, affectedRows] = response;
-    if (totalAffectedRows < 1) throw boom.notFound('Could not found the record to update.');
+    if (totalAffectedRows < 1) throw boom.notFound('Fund not found.');
 
     const [data] = affectedRows;
     return data;
-  }
+  };
 
-  async delete({ userID, fundID, defaultFundID }) {
-    const deletingFund = await Fund.findByPk(fundID);
+  async delete({ userID, id }) {
 
-    if (deletingFund === null) throw boom.notFound('Fund not found.');
-    if (deletingFund.userID !== userID) throw boom.forbidden("User is not authorized to update this fund.");
-    if (deletingFund.isDefault) throw boom.conflict('Cannot delete the default fund.');
-    if (deletingFund.balance > 0) throw boom.conflict('Cannot delete a fund with positive balance.');
+    const data = sequelize.transaction(async(transaction) => {
 
-    const relatedToDeletingFund = { [Op.or]: [{ sourceID: fundID }, { targetID: fundID }] };
-    const relatedToDefaultFund = { [Op.or]: [{ sourceID: defaultFundID }, { targetID: defaultFundID }] };
+      const deletingFund = await Fund.findByPk(id, { transaction });
+      if (deletingFund === null) throw boom.notFound('Fund not found.');
+      if (deletingFund.userID !== userID) throw boom.forbidden("User is not authorized to update this fund.");
+      if (deletingFund.isDefault) throw boom.conflict('Cannot delete the default fund.');
+      
+      const fundRecords = await recordService.getFundRecords({ fundID: id, transaction });
+      const fundBalance = fundRecords.reduce((accumulatedBalance, record) => {
+        const resultingBalance = accumulatedBalance + record.amount;
+        return resultingBalance;
+      }, 0);
+  
+      if (fundBalance > 0) throw boom.conflict('Cannot delete a fund with positive balance.');
 
-    // * https://wallance.atlassian.net/browse/WAL-51
-    await Record.destroy({ where: { [Op.and]: [relatedToDeletingFund, relatedToDefaultFund] } });
-    await Record.update({ targetID: defaultFundID }, { where: { targetID: fundID }, [Op.not]: { sourceID: defaultFundID } });
-    await Record.update({ sourceID: defaultFundID }, { where: { sourceID: fundID }, [Op.not]: { targetID: defaultFundID } });
-    await deletingFund.destroy();
+      const defaultFund = await Fund.findOne({ where: { userID, isDefault: true }, raw: true, transaction })
+      const deletingOrDefaultFund = { [Op.or]: [defaultFund.id, id] };
 
-    return fundID;
-  }
+      await Record.destroy({
+        where: {
+          fundID: deletingOrDefaultFund,
+          otherFundID: deletingOrDefaultFund
+        },
+        transaction,
+      });
 
-}
+      await Record.update({ fundID: defaultFund.id }, { where: { fundID: id }, transaction, });
+      await Record.update({ otherFundID: defaultFund.id }, { where: { otherFundID: id }, transaction, });
+
+      await deletingFund.destroy({ transaction });
+      return id;
+    });
+
+    return data;
+  };
+
+};
 
 module.exports = FundService;

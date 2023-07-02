@@ -10,15 +10,16 @@ const recordSchema = {
     primaryKey: true,
     unique: true,
     type: DataTypes.UUID,
-    defaultValue: Sequelize.UUIDV4
+    defaultValue: Sequelize.UUIDV4,
+    required: true,
   },
   userID: {
     field: 'user_id',
     allowNull: false,
     type: DataTypes.UUID,
     references: { model: USER_TABLE, key: 'id' },
-    required: true,
     onDelete: 'CASCADE',
+    required: true,
   },
   fundID: {
     field: 'fund_id',
@@ -26,16 +27,28 @@ const recordSchema = {
     type: DataTypes.UUID,
     references: { model: FUND_TABLE, key: 'id' },
   },
+  otherFundID: {
+    field: "other_fund_id",
+    type: DataTypes.UUID,
+    allowNull: true,
+    defaultValue: null,
+    references: { model: FUND_TABLE, key: "id" },
+    validate: {
+      requiredInAssignments: (value) => {
+        if (this.type === 0 && value === null) throw new Error("Both funds must be specified for assignments.")
+      },
+    }
+  },
   date: {
     allowNull: false,
     type: DataTypes.DATE,
-    unique: true,
     validate: {
-      custom: (date) => {
+      notFutureDates: (date) => {
         const today = new Date();
         if (date > today) throw new Error ('Records in future date are not allowed.')
       }
     },
+    required: true,
   },
   type: {
     allowNull: false,
@@ -54,7 +67,8 @@ const recordSchema = {
         if (this.type === 1 && value < 1) throw new Error("Amount must be positive on credits.")
         else if (this.type === 2 && value > -1) throw new Error("Amount must be negative on debits.")
       }
-    }
+    },
+    required: true,
   },
   note: { type: DataTypes.STRING },
   tag: { type: DataTypes.STRING },
@@ -74,7 +88,7 @@ class Record extends Model {
   static associate(models) {
     this.belongsTo(models.User, { as: 'user', foreignKey: 'id' });
     this.belongsTo(models.Fund, { as: 'fund', foreignKey: 'id' });
-    this.hasOne(models.FundState, { as: 'fundState', foreignKey: 'recordDate' });
+    this.belongsTo(models.Fund, { as: 'otherFund', foreignKey: 'id' });
   }
 
   static config(sequelize) {

@@ -1,13 +1,12 @@
 const express = require('express');
 const RecordService = require('../services/recordService');
 const validatorHandler = require('../middlewares/validatorHandler');
+
 const {
   createRecordSchema,
   updateRecordSchema,
   getRecordsSchema,
   alterRecordSchema,
-  createAssignmentSchema,
-  updateAssignmentSchema
 } = require('../schemas/recordSchema');
 
 const router = express.Router();
@@ -28,7 +27,7 @@ router.get('/:userFunds',
       next(error);
     }
   }
-)
+);
 
 router.post('/',
   validatorHandler(createRecordSchema, 'body'),
@@ -43,41 +42,15 @@ router.post('/',
   }
 );
 
-router.post('/assignment',
-  validatorHandler(createAssignmentSchema, 'body'),
-  async (req, res, next) => {
-    try {
-      const { body } = req;
-      const data = await service.assign(body);
-      res.status(201).json(data);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.put('/assignment/:id',
-  validatorHandler(updateAssignmentSchema, 'body'),
-  async (req, res, next) => {
-    try {
-      const { id } = req.params;
-      const { body } = req;
-      const data = await service.updateAssignment(id, body);
-      res.status(200).json(data);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.patch('/:userID/:id',
+router.patch('/:id',
   validatorHandler(alterRecordSchema, 'params'),
   validatorHandler(updateRecordSchema, 'body'),
   async (req, res, next) => {
     try {
       const { id } = req.params;
       const body = req.body;
-      const data = await service.update({ id, body });
+      const { sub: userID } = req.user;
+      const data = await service.update({ id, body }, userID);
       res.json(data);
     } catch (error) {
       next(error);
@@ -91,19 +64,6 @@ router.delete('/:id',
     try {
       const { id } = req.params;
       const data = await service.delete({ id });
-      res.json(data);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
-router.delete('/assignment/:id',
-  validatorHandler(alterRecordSchema, 'params'),
-  async (req, res, next) => {
-    try {
-      const { id } = req.params;
-      const data = await service.deleteAssignment({ id });
       res.json(data);
     } catch (error) {
       next(error);

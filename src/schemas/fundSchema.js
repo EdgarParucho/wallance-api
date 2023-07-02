@@ -21,12 +21,12 @@ const updateFundSchema = Joi.object({
 });
 
 const fundIDSchema = Joi.object({
-  userID: Joi.string().required(), // why string here and number up there?
+  userID: userID.required(),
   id: id.required()
 });
 
 const deleteFundSchema = Joi.object({
-  defaultFundID: Joi.number().required()
+  id: id.required()
 });
 
 module.exports = { createFundSchema, updateFundSchema, deleteFundSchema, fundIDSchema };
