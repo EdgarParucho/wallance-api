@@ -7,7 +7,6 @@ const LocalStrategy = new Strategy(
   { usernameField: 'email' },
   async (providedEmail, providedPassword, done) => {
     try {
-
       const userStored = await models.User.findOne({ where: { email: providedEmail }, include: ['funds'] });
       if (userStored === null) return done(boom.unauthorized("The email-password combination is not valid to log you in."), false);
       const passwordMatch = await bcrypt.compare(providedPassword, userStored.dataValues.password);

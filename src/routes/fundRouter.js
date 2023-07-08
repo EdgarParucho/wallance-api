@@ -1,12 +1,7 @@
 const express = require('express');
 const FundService = require('../services/fundService');
 const validatorHandler = require('../middlewares/validatorHandler');
-const {
-  createFundSchema,
-  updateFundSchema,
-  fundIDSchema,
-  deleteFundSchema
-} = require('../schemas/fundSchema');
+const { createFundSchema, updateFundSchema, fundIDSchema, deleteFundSchema } = require('../schemas/fundSchema');
 
 const router = express.Router();
 const service = new FundService();

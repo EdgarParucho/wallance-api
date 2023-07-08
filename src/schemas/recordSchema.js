@@ -8,7 +8,6 @@ const tag = Joi.string();
 const fundID = id;
 const otherFundID = id;
 const type = Joi.number();
-const userID = id;
 
 const createRecordSchema = Joi.object({
   amount: amount.required(),
@@ -17,7 +16,6 @@ const createRecordSchema = Joi.object({
   tag: tag.required(),
   fundID: fundID.required(),
   type: type.required(),
-  userID: userID.required(),
   otherFundID
 });
 

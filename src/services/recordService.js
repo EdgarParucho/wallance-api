@@ -115,7 +115,6 @@ class RecordService {
     return correlatedRecord;  
   };
 
-
   async create(body) {
 
     body.date = new Date(body.date);
