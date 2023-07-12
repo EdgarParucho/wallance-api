@@ -11,12 +11,6 @@ class CredentialService {
     this.activeOTP = { sign: null, action: null, code: null };
   }
 
-  async login({ email, password }) {
-    const data = await models.User.findOne({ where: { email, password }, include: ['funds'] });
-    if (data === null) throw boom.notFound('The email-password combination is invalid.');
-    return data;
-  }
-
   generateOTP({ action, sign }) {
     const code = uuidv1();
     this.activeOTP.sign = sign;

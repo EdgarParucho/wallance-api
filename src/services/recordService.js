@@ -62,17 +62,14 @@ class RecordService {
     let fundRecords = await this.getFundRecords({ fundID, transaction });
 
     if (excludingID && fundRecords.length > 0) fundRecords = fundRecords.filter(record => record.id !== excludingID)
-    if (includingRecord) {
-      fundRecords.push(includingRecord);
-      fundRecords.sort((a, b) => a.date - b.date);
-    }
+    if (includingRecord) fundRecords.push(includingRecord);
+    fundRecords.sort((a, b) => a.date - b.date);
 
     fundRecords.reduce((accumulatedBalance, record) => {
       const resultingBalance = accumulatedBalance + record.amount;
       if (resultingBalance < 0) throw boom.conflict(
         `The provided data would cause inconsistencies:
-          \nOn: ${record.date.toLocaleString()},
-          The accumulated balance would be: $${accumulatedBalance} to cover the record's amount: $${record.amount}.
+          \nOn: ${record.date.toLocaleString()}, the accumulated balance would be: ${accumulatedBalance} to cover the record's amount: ${record.amount}.
         `
       );
       return resultingBalance;
@@ -123,10 +120,10 @@ class RecordService {
     const fund = await this.validateFundExistance({ id: body.fundID });
 
     if (body.type === 1 && !fund.dataValues.isDefault) throw boom.conflict("Credits must be saved in the default fund");
-    if (body.type === 1) return await models.Record.create(body);
+    if (body.type === 1) return [await models.Record.create(body)];
 
     if (body.type !== 1) await this.validateBalanceAvailability({ fundID: body.fundID }, { includingRecord: body });
-    if (body.type === 2) return await models.Record.create(body);
+    if (body.type === 2) return [await models.Record.create(body)];
     
     if (body.amount > 0) throw boom.conflict("Amount must be provided in negative for assignment records.");
     await this.validateFundExistance({ id: body.otherFundID });
@@ -183,7 +180,9 @@ class RecordService {
       
       if (!updatingSensitiveKey) {
 
-        if (!recordIsAssignment) return await record.update({ ...updateEntries }, { returning: true });
+        if (!recordIsAssignment) return await [record.update({ ...updateEntries }, { transaction })];
+
+        console.log("\nAssignment\n");
 
         const updatedRecord = await record.update({
           ...updateEntries
@@ -217,9 +216,7 @@ class RecordService {
       }, { excludingID: correlatedRecord.dataValues.id, transaction });
       
       const updatedRecord = await record.update(updateEntries, { returning: true, transaction });
-      if (!recordIsAssignment) return updatedRecord;
-
-      console.log(recordIsAssignment, correlatedUpdates);
+      if (!recordIsAssignment) return [updatedRecord];
 
       const updatedCorrelated = await correlatedRecord.update(correlatedUpdates, { returning: true, transaction });
       return [updatedRecord, updatedCorrelated];

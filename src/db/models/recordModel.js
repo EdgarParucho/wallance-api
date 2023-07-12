@@ -1,5 +1,6 @@
 const { Model, DataTypes, Sequelize } = require('sequelize');
 
+const boom = require('@hapi/boom');
 const { USER_TABLE } = require('./userModel');
 const { FUND_TABLE } = require('./fundModel');
 const RECORD_TABLE = 'records';
@@ -19,7 +20,7 @@ const recordSchema = {
     type: DataTypes.UUID,
     references: { model: USER_TABLE, key: 'id' },
     onDelete: 'CASCADE',
-    required: true,
+    required: true
   },
   fundID: {
     field: 'fund_id',
@@ -35,7 +36,7 @@ const recordSchema = {
     references: { model: FUND_TABLE, key: "id" },
     validate: {
       requiredInAssignments: (value) => {
-        if (this.type === 0 && value === null) throw new Error("Both funds must be specified for assignments.")
+        if (this.type === 0 && value === null) throw boom.conflict("Both funds must be specified for assignments.")
       },
     }
   },
@@ -45,7 +46,7 @@ const recordSchema = {
     validate: {
       notFutureDates: (date) => {
         const today = new Date();
-        if (date > today) throw new Error ('Records in future date are not allowed.')
+        if (date > today) throw boom.conflict('Records in future date are not allowed.')
       }
     },
     required: true,
@@ -64,8 +65,8 @@ const recordSchema = {
     type: DataTypes.FLOAT,
     validate: {
       isConsistentToType(value) {
-        if (this.type === 1 && value < 1) throw new Error("Amount must be positive on credits.")
-        else if (this.type === 2 && value > -1) throw new Error("Amount must be negative on debits.")
+        if (this.type === 1 && value < 1) throw boom.conflict("Amount must be positive on credits.")
+        else if (this.type === 2 && value > -1) throw boom.conflict("Amount must be negative on debits.")
       }
     },
     required: true,

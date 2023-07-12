@@ -7,16 +7,18 @@ const router = express.Router();
 const service = new FundService();
 
 router.post('/',
-validatorHandler(createFundSchema, 'body'),
-async (req, res, next) => {
-  try {
-    const { body } = req;
-    const data = await service.create(body);
-    res.status(201).json(data);
-  } catch (error) {
-    next(error);
+  validatorHandler(createFundSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const { body } = req;
+      const { sub: userID } = req.user;
+      const data = await service.create({ ...body, userID });
+      res.status(201).json(data);
+    } catch (error) {
+      next(error);
+    }
   }
-})
+);
 
 router.patch('/:id',
 validatorHandler(fundIDSchema, 'params'),
@@ -31,10 +33,10 @@ async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-})
+});
 
 router.delete('/:id',
-validatorHandler(deleteFundSchema, 'params'),
+validatorHandler(fundIDSchema, 'params'),
 async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -44,6 +46,6 @@ async (req, res, next) => {
   } catch (error) {
     next(error)
   }
-})
+});
 
 module.exports = router;

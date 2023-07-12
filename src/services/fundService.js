@@ -13,16 +13,17 @@ class FundService {
   constructor() {}
 
   async create(body) {
-    const data = await Fund.create(body);
+    const data = await Fund.create({ ...body, isDefault: false });
+    delete data.dataValues.userID;
     return data;
   };
 
   async update(userID, id, body) {
-    const response = await Fund.update(body, { where: { id, userID }, returning: true });
-    const [totalAffectedRows, affectedRows] = response;
-    if (totalAffectedRows < 1) throw boom.notFound('Fund not found.');
-
-    const [data] = affectedRows;
+    const fund = await Fund.findByPk(id);
+    if (fund === null) throw boom.notFound("The requested fund wasn't found.")
+    if (fund.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized to manage the fund");
+    const data = await fund.update(body);
+    delete data.dataValues.userID;
     return data;
   };
 

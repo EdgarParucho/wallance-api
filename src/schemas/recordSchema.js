@@ -12,8 +12,8 @@ const type = Joi.number();
 const createRecordSchema = Joi.object({
   amount: amount.required(),
   date: date.required(),
-  note: note.required(),
-  tag: tag.required(),
+  note,
+  tag,
   fundID: fundID.required(),
   type: type.required(),
   otherFundID
