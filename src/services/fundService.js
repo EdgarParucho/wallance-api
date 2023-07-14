@@ -21,7 +21,7 @@ class FundService {
   async update(userID, id, body) {
     const fund = await Fund.findByPk(id);
     if (fund === null) throw boom.notFound("The requested fund wasn't found.")
-    if (fund.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized to manage the fund");
+    if (fund.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action");
     const data = await fund.update(body);
     delete data.dataValues.userID;
     return data;
@@ -33,8 +33,8 @@ class FundService {
 
       const deletingFund = await Fund.findByPk(id, { transaction });
       if (deletingFund === null) throw boom.notFound('Fund not found.');
-      if (deletingFund.userID !== userID) throw boom.forbidden("User is not authorized to update this fund.");
-      if (deletingFund.isDefault) throw boom.conflict('Cannot delete the default fund.');
+      if (deletingFund.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized to update this fund.");
+      if (deletingFund.dataValues.isDefault) throw boom.conflict('Cannot delete the default fund.');
       
       const fundRecords = await recordService.getFundRecords({ fundID: id, transaction });
       const fundBalance = fundRecords.reduce((accumulatedBalance, record) => {

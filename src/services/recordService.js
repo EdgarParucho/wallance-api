@@ -8,10 +8,8 @@ class RecordService {
   constructor() {}
 
   async find(userID) {
-
     const data = await models.Record.findAll({ where: { userID } });
-    if (data.length === 0) throw boom.notFound('There are no records associated yet.');
-
+    if (data.length === 0) throw boom.notFound('There are no records associated to the user.');
     return data;
   };
 
@@ -23,15 +21,16 @@ class RecordService {
     const recordsOnDate = await models.Record.count({ where: filters });
 
     if (recordsOnDate > 0) throw boom.conflict(
-      "You have a record at the same date-time cobination. Please pick a different to avoid inconsistencies."
+      "You have a record at the same date-time combination. Please pick a different to avoid inconsistencies."
     )
 
     return
   };
 
-  async validateFundExistance({ id, transaction }) {
+  async validateFundExistance({ id, userID, transaction }) {
     const fund = await models.Fund.findByPk(id, { transaction });
     if (fund === null) throw boom.notFound("Could not find the requested Fund.")
+    if (fund.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action.")
     return fund;
   };
 
@@ -55,9 +54,9 @@ class RecordService {
     return
   };
 
-  async validateBalanceAvailability({ fundID, }, { excludingID, includingRecord, transaction = null }) {
+  async validateBalanceAvailability({ fundID, userID }, { excludingID, includingRecord, transaction = null }) {
 
-    await this.validateFundExistance({ id: fundID, transaction });
+    await this.validateFundExistance({ id: fundID, userID, transaction });
 
     let fundRecords = await this.getFundRecords({ fundID, transaction });
 
@@ -78,11 +77,12 @@ class RecordService {
     return
   };
 
-  async findRecord({ id, correlatedDate, fundID }, { isCorrelated } = false) {
+  async findRecord({ id, correlatedDate, fundID, userID }, { isCorrelated } = false) {
 
     if (!isCorrelated) {
       const record = await models.Record.findByPk(id);
       if (record === null) throw boom.notFound("Record not found.");
+      if (record.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action.");
       return record;
     }
 
@@ -92,6 +92,7 @@ class RecordService {
       where: { date: correlatedDate, fundID },
     });
     if (correlatedRecord === null) throw boom.notFound("Could not find the correlated record.");
+    if (correlatedRecord.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action.");
 
     return correlatedRecord;
   };
@@ -117,16 +118,16 @@ class RecordService {
     body.date = new Date(body.date);
     body.date.setSeconds(1);
     await this.validateDateAvailability(body);
-    const fund = await this.validateFundExistance({ id: body.fundID });
+    const fund = await this.validateFundExistance({ id: body.fundID, userID: body.userID });
 
     if (body.type === 1 && !fund.dataValues.isDefault) throw boom.conflict("Credits must be saved in the default fund");
     if (body.type === 1) return [await models.Record.create(body)];
 
-    if (body.type !== 1) await this.validateBalanceAvailability({ fundID: body.fundID }, { includingRecord: body });
+    if (body.type !== 1) await this.validateBalanceAvailability({ fundID: body.fundID, userID: body.userID }, { includingRecord: body });
     if (body.type === 2) return [await models.Record.create(body)];
     
     if (body.amount > 0) throw boom.conflict("Amount must be provided in negative for assignment records.");
-    await this.validateFundExistance({ id: body.otherFundID });
+    await this.validateFundExistance({ id: body.otherFundID, userID: body.userID });
 
     const correlatedRecordBody = this.defineCorrelatedRecord({ baseData: body });
 
@@ -142,10 +143,11 @@ class RecordService {
 
   async update({ id, body: updateEntries }, userID) {
 
-    const record = await this.findRecord({ id });
+    const record = await this.findRecord({ id, userID });
     const correlatedRecord = record.dataValues.type !== 0 ? null : await this.findRecord({
       correlatedDate: new Date(record.dataValues.date),
-      fundID: record.dataValues.otherFundID
+      fundID: record.dataValues.otherFundID,
+      userID
     }, { isCorrelated: true });
 
     if (record.dataValues.type !== 1 && updateEntries.amount > 0) throw boom.conflict(
@@ -182,8 +184,6 @@ class RecordService {
 
         if (!recordIsAssignment) return await [record.update({ ...updateEntries }, { transaction })];
 
-        console.log("\nAssignment\n");
-
         const updatedRecord = await record.update({
           ...updateEntries
         }, { returning: true, transaction });
@@ -193,7 +193,8 @@ class RecordService {
       }
 
       await this.validateBalanceAvailability({
-        fundID: updateEntries.fundID || record.dataValues.fundID
+        fundID: updateEntries.fundID || record.dataValues.fundID,
+        userID
       },
       {
         includingRecord: { ...record.dataValues, ...updateEntries },
@@ -201,7 +202,8 @@ class RecordService {
       });
 
       if (recordIsAssignment) await this.validateBalanceAvailability({
-        fundID: correlatedUpdates.fundID || correlatedRecord.dataValues.fundID
+        fundID: correlatedUpdates.fundID || correlatedRecord.dataValues.fundID,
+        userID
       }, {
         includingRecord: { ...correlatedRecord.dataValues, ...correlatedUpdates },
         excludingID: correlatedRecord.dataValues.id, transaction
@@ -209,10 +211,12 @@ class RecordService {
 
       if (updateKeys.includes("fundID")) await this.validateBalanceAvailability({
         fundID: record.dataValues.fundID,
+        userID
       }, { excludingID: record.dataValues.id, transaction });
 
       if (updateKeys.includes("otherFundID")) await this.validateBalanceAvailability({
         fundID: record.dataValues.otherFundID,
+        userID
       }, { excludingID: correlatedRecord.dataValues.id, transaction });
       
       const updatedRecord = await record.update(updateEntries, { returning: true, transaction });
@@ -225,9 +229,9 @@ class RecordService {
     return data;
   };
 
-  async delete ({ id }) {
+  async delete ({ id, userID }) {
 
-    const record = await this.findRecord({ id });
+    const record = await this.findRecord({ id, userID });
     const correlatedRecord = record.dataValues.type !== 0 ? null : await this.findRecord({
       correlatedDate: new Date(record.dataValues.date),
       fundID: record.dataValues.otherFundID
@@ -237,6 +241,7 @@ class RecordService {
 
       if (record.dataValues.type === 1) await this.validateBalanceAvailability({
         fundID: record.dataValues.fundID,
+        userID
       }, { excludingID: record.dataValues.id, transaction });
 
       const recordIsAssignment = record.dataValues.type === 0;
@@ -246,6 +251,7 @@ class RecordService {
 
       await this.validateBalanceAvailability({
         fundID: record.dataValues.otherFundID,
+        userID
       }, { excludingID: correlatedRecord.dataValues.id, transaction });
 
       await correlatedRecord.destroy({ transaction });
