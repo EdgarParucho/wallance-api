@@ -49,7 +49,9 @@ router.post('/login',
       const { id, email, funds, records } = req.user;
       const secret = config.jwtSecret;
       const payload = { sub: id };
-      const token = await jwt.sign(payload, secret);
+      const sign = jwt.sign(payload, secret, { expiresIn: "15m" });
+      const { exp } = jwt.decode(sign, { secret });
+      const token = { token: sign, exp };
       const data = { email, token, records, funds };
       res.json(data);
     } catch (error) {
