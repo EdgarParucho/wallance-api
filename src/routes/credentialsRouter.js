@@ -9,16 +9,19 @@ const config = require('../config/index.js');
 
 const router = express.Router();
 const service = new CredentialService();
+const publicActions = ["sign", "recovery"];
+const actionIsPublic = (action) => publicActions.some(a => a === action);
 
 router.post('/otp', (req, res, next) => {
-    if (req.body.action !== "sign") passport.authenticate('jwt', { session: false })(req, res, next)
-    else next()
+  console.log(req.body.action);
+  if (!actionIsPublic(req.body.action)) passport.authenticate('jwt', { session: false })(req, res, next)
+  else next()
   },
   validatorHandler(OTPValidationSchema, 'body'),
   async (req, res, next) => {
     try {
       const { body } = req;
-      body.sign = body.action === "sign" ? body.email : req.user.sub;
+      body.sign = (actionIsPublic(body.action)) ? body.email : req.user.sub;
       await service.sendOTP(body);
       res.send('A code was sent to the provided email. Please use it to complete the action.');
     } catch (error) {
@@ -35,6 +38,20 @@ router.post('/sign',
       const OTP = req.header('OTP');
       const data = await service.sign({ OTP, ...body });
       res.status(201).send(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.patch('/reset',
+  validatorHandler(signSchema, 'body'),
+  async (req, res, next) => {
+    try {
+      const { body } = req;
+      const OTP = req.header('OTP');
+      const data = await service.resetPassword({ OTP, ...body });
+      res.status(200).send(data);
     } catch (error) {
       next(error);
     }

@@ -36,7 +36,6 @@ class CredentialService {
   }
 
   async sendOTP({ action, sign, email, emailShouldBeStored }) {
-
     const code = this.generateOTP({ action, sign });
     await this.validateEmailInDB({ email, emailShouldBeStored });
 
@@ -88,6 +87,14 @@ class CredentialService {
     });
 
     return 'User created successfully.';
+  };
+
+  async resetPassword({ OTP, email, password }) {
+    this.validateOTP({ code: OTP, action: "recovery", sign: email });
+    const hash = await bcrypt.hash(password, 10);
+    const user = await models.User.findOne({ where: { email } });
+    await user.update({ password: hash });
+    return 'Password updated successfully.';
   };
 
 }
