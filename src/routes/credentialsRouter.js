@@ -13,7 +13,6 @@ const publicActions = ["sign", "recovery"];
 const actionIsPublic = (action) => publicActions.some(a => a === action);
 
 router.post('/otp', (req, res, next) => {
-  console.log(req.body.action);
   if (!actionIsPublic(req.body.action)) passport.authenticate('jwt', { session: false })(req, res, next)
   else next()
   },
@@ -63,13 +62,13 @@ router.post('/login',
   passport.authenticate('local', { session: false }),
   async (req, res, next) => {
     try {
-      const { id, email, funds, records } = req.user;
+      const { id, funds, records } = req.user;
       const secret = config.jwtSecret;
       const payload = { sub: id };
-      const sign = jwt.sign(payload, secret, { expiresIn: "15m" });
+      const sign = jwt.sign(payload, secret, { expiresIn: "1h" });
       const { exp } = jwt.decode(sign, { secret });
       const token = { token: sign, exp };
-      const data = { email, token, records, funds };
+      const data = { token, records, funds };
       res.json(data);
     } catch (error) {
       next(error);

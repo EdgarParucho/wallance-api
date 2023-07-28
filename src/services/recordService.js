@@ -174,21 +174,20 @@ class RecordService {
     this.validateFundsCorrelation({
       expectedRecord: { ...record.dataValues, ...updateEntries }
     });
-    
+
     const data = sequelize.transaction(async(transaction) => {
-
       const recordIsAssignment = record.dataValues.type === 0;
-      const correlatedUpdates = recordIsAssignment ? await this.defineCorrelatedRecord({ baseData: updateEntries }) : null;
-      
-      if (!updatingSensitiveKey) {
+      const correlatedUpdates = recordIsAssignment ? this.defineCorrelatedRecord({ baseData: updateEntries }) : null;
 
-        if (!recordIsAssignment) return await [record.update({ ...updateEntries }, { transaction })];
+      if (!updatingSensitiveKey) {
+        if (!recordIsAssignment) return [await record.update({ ...updateEntries }, { transaction })];
 
         const updatedRecord = await record.update({
           ...updateEntries
         }, { returning: true, transaction });
         const updatedCorrelated = await correlatedRecord.update({
-          ...correlatedUpdates }, { returning: true, transaction });
+          ...correlatedUpdates
+        }, { returning: true, transaction });
         return [updatedRecord, updatedCorrelated];
       }
 
@@ -234,7 +233,8 @@ class RecordService {
     const record = await this.findRecord({ id, userID });
     const correlatedRecord = record.dataValues.type !== 0 ? null : await this.findRecord({
       correlatedDate: new Date(record.dataValues.date),
-      fundID: record.dataValues.otherFundID
+      fundID: record.dataValues.otherFundID,
+      userID
     }, { isCorrelated: true });
 
     const data = sequelize.transaction(async(transaction) => {
@@ -247,7 +247,7 @@ class RecordService {
       const recordIsAssignment = record.dataValues.type === 0;
 
       await record.destroy({ transaction });
-      if (!recordIsAssignment) return record.dataValues.id;
+      if (!recordIsAssignment) return [record.dataValues.id];
 
       await this.validateBalanceAvailability({
         fundID: record.dataValues.otherFundID,

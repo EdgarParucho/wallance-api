@@ -16,11 +16,9 @@ app.use(express.urlencoded({ extended: true }));
 require('./src/utils/auth');
 routerAPI(app);
 
-// Error middlewares must be used after router;
-// Order matters for sequence;
 if (config.env === 'dev') app.use(logError);
-app.use(ORMErrorHandler);
 app.use(boomErrorHandler);
+app.use(ORMErrorHandler);
 app.use(errorHandler);
 
 app.listen(port, () => console.log(`Running on port ${port}`));
