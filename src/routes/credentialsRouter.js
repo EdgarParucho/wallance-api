@@ -76,27 +76,4 @@ router.post('/login',
   }
 );
 
-// router.post('/logout',
-//   async (req, res, next) => {
-//     try {
-//       res.json(data);
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// );
-
-// router.post('/recovery',
-//   validatorHandler(preValidationSchema, 'body'),
-//   async (req, res, next) => {
-//     try {
-//       const emailIsNew = true;
-//       const data = await service.preValidation(email, emailIsNew);
-//       res.send(data);
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// );
-
 module.exports = { credentialsRouter: router, service };

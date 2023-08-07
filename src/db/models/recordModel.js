@@ -65,8 +65,8 @@ const recordSchema = {
     type: DataTypes.FLOAT,
     validate: {
       isConsistentToType(value) {
-        if (this.type === 1 && value < 1) throw boom.conflict("Amount must be positive on credits.")
-        else if (this.type === 2 && value > -1) throw boom.conflict("Amount must be negative on debits.")
+        if (this.type === 1 && value < 0) throw boom.conflict("Amount must be positive on credits.")
+        else if (this.type === 2 && value > 0) throw boom.conflict("Amount must be negative on debits.")
       }
     },
     required: true,

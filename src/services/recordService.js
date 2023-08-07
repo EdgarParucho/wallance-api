@@ -1,4 +1,3 @@
-const sequelize = require('../libs/sequelize');
 const { models } = require('../libs/sequelize');
 const { Op } = require('sequelize');
 const boom = require('@hapi/boom');
@@ -13,63 +12,59 @@ class RecordService {
     return data;
   };
 
-  async validateDateAvailability({ date, userID, id }, { updating } = false) {
-
-    const filters = { date, userID };
-    if (updating) filters.id = { [Op.ne]: id, };
-
-    const recordsOnDate = await models.Record.count({ where: filters });
-
+  async validateDateAvailability({ date, userID }) {
+    const recordsOnDate = await models.Record.count({ where: { date, userID } });
     if (recordsOnDate > 0) throw boom.conflict(
       "You have a record at the same date-time combination. Please pick a different to avoid inconsistencies."
     )
-
-    return
+    else return
   };
 
-  async validateFundExistance({ id, userID, transaction }) {
-    const fund = await models.Fund.findByPk(id, { transaction });
+  async validateFundExistance({ id, userID }) {
+    const fund = await models.Fund.findByPk(id);
     if (fund === null) throw boom.notFound("Could not find the requested Fund.")
     if (fund.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action.")
     return fund;
   };
 
-  async getFundRecords({ fundID, transaction }) {
+  async getFundRecords({ fundID, excludingRecordID, transaction = null }) {
+    const filters = {
+      [Op.or]: [
+        { fundID }, { otherFundID: fundID }
+      ],
+    };
+
+    if (excludingRecordID) filters.id = { [Op.ne]: excludingRecordID };
+
     const fundRecords = await models.Record.findAll({
-      where: { fundID },
+      where: filters,
       order: [
         ["date", "DESC"]
       ],
-      attributes: ["id", "date", "amount"],
+      attributes: ["id", "fundID", "date", "amount", "otherFundID"],
       raw: true,
       transaction
     });
     return fundRecords;
   };
 
-  validateFundsCorrelation({ expectedRecord }) {
-    if (expectedRecord.fundID === expectedRecord.otherFundID) throw boom.conflict(
-      "Assignment funds (source and target) can't be equal."
-    );
-    return
-  };
+  async validateBalanceConsistency({ fundID, userID }, { excludingRecordID, includingRecord }) {
 
-  async validateBalanceAvailability({ fundID, userID }, { excludingID, includingRecord, transaction = null }) {
+    const fund = await this.validateFundExistance({ id: fundID, userID });
+    const fundRecords = await this.getFundRecords({ fundID, excludingRecordID });
 
-    await this.validateFundExistance({ id: fundID, userID, transaction });
+    if (fundRecords.length < 1) throw boom.conflict('The provided data would cause inconsistencies:'
+    + `\n${fund.name} has no records, therefore, no balance available on date.`)
 
-    let fundRecords = await this.getFundRecords({ fundID, transaction });
-
-    if (excludingID && fundRecords.length > 0) fundRecords = fundRecords.filter(record => record.id !== excludingID)
     if (includingRecord) fundRecords.push(includingRecord);
     fundRecords.sort((a, b) => a.date - b.date);
 
     fundRecords.reduce((accumulatedBalance, record) => {
-      const resultingBalance = accumulatedBalance + record.amount;
-      if (resultingBalance < 0) throw boom.conflict(
-        `The provided data would cause inconsistencies:
-          \nOn: ${record.date.toLocaleString()}, the accumulated balance would be: ${accumulatedBalance} to cover the record's amount: ${record.amount}.
-        `
+      const recordAmount = (record.fundID === fundID) ? Number(record.amount) : -Number(record.amount);
+      const resultingBalance = (accumulatedBalance + recordAmount);
+      if (resultingBalance < 0) throw boom.conflict('The provided data would cause inconsistencies.' +
+      `\nOn: ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(record.date)}, `+
+      `fund's balance would be: ${accumulatedBalance.toFixed(2)} to cover the record's amount: ${Number(record.amount).toFixed(2)}.`
       );
       return resultingBalance;
     }, 0)
@@ -77,189 +72,112 @@ class RecordService {
     return
   };
 
-  async findRecord({ id, correlatedDate, fundID, userID }, { isCorrelated } = false) {
-
-    if (!isCorrelated) {
-      const record = await models.Record.findByPk(id);
-      if (record === null) throw boom.notFound("Record not found.");
-      if (record.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action.");
-      return record;
-    }
-
-    correlatedDate.setSeconds(2);
-
-    const correlatedRecord = await models.Record.findOne({
-      where: { date: correlatedDate, fundID },
-    });
-    if (correlatedRecord === null) throw boom.notFound("Could not find the correlated record.");
-    if (correlatedRecord.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action.");
-
-    return correlatedRecord;
-  };
-
-  defineCorrelatedRecord({ baseData }) {
-
-    const correlatedRecord = { ...baseData };
-    const keys = Object.keys(baseData);
-
-    if (keys.includes("amount")) correlatedRecord.amount = -baseData.amount;
-    if (keys.includes("fundID")) correlatedRecord.otherFundID = baseData.fundID;
-    if (keys.includes("otherFundID")) correlatedRecord.fundID = baseData.otherFundID;
-    if (keys.includes("date")) {
-      correlatedRecord.date = new Date(baseData.date);
-      correlatedRecord.date.setSeconds(2);
-    }
-
-    return correlatedRecord;  
+  async findRecord({ id, userID }) {
+    const record = await models.Record.findByPk(id);
+    if (record === null) throw boom.notFound("Record not found.");
+    if (record.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action.");
+    return record;
   };
 
   async create(body) {
 
     body.date = new Date(body.date);
     body.date.setSeconds(1);
-    await this.validateDateAvailability(body);
+
+    await this.validateDateAvailability({ date: body.date, userID: body.userID });
     const fund = await this.validateFundExistance({ id: body.fundID, userID: body.userID });
-
-    if (body.type === 1 && !fund.dataValues.isDefault) throw boom.conflict("Credits must be saved in the default fund");
-    if (body.type === 1) return [await models.Record.create(body)];
-
-    if (body.type !== 1) await this.validateBalanceAvailability({ fundID: body.fundID, userID: body.userID }, { includingRecord: body });
-    if (body.type === 2) return [await models.Record.create(body)];
-    
-    if (body.amount > 0) throw boom.conflict("Amount must be provided in negative for assignment records.");
-    await this.validateFundExistance({ id: body.otherFundID, userID: body.userID });
-
-    const correlatedRecordBody = this.defineCorrelatedRecord({ baseData: body });
-
-    const data = sequelize.transaction(async(transaction) => {
-      const records = await models.Record.bulkCreate([
-        body, correlatedRecordBody
-      ], { validate: true, transaction });
-      return records;
+    if (body.type === 1 && !fund.dataValues.isDefault) throw boom.conflict("Credits must be saved in default fund");
+    if (body.type === 0) await this.validateFundExistance({
+      id: body.otherFundID,
+      userID: body.userID
     });
 
-    return data;
+    if (body.type !== 1 && body.amount > 0) body.amount = -body.amount;
+    else if (body.type === 1 && body.amount < 0) body.amount = -body.amount;
+
+    if (body.type !== 1) await this.validateBalanceConsistency({
+      fundID: body.fundID,
+      userID: body.userID
+    }, { includingRecord: body });
+
+    return [await models.Record.create(body)];
   };
 
   async update({ id, body: updateEntries }, userID) {
 
     const record = await this.findRecord({ id, userID });
-    const correlatedRecord = record.dataValues.type !== 0 ? null : await this.findRecord({
-      correlatedDate: new Date(record.dataValues.date),
-      fundID: record.dataValues.otherFundID,
-      userID
-    }, { isCorrelated: true });
+    const expectedRecord = { ...record.dataValues, ...updateEntries };
 
-    if (record.dataValues.type !== 1 && updateEntries.amount > 0) throw boom.conflict(
-      "Amount must be provided in negative for assignment, and debit records."
+    if (expectedRecord.type !== 1 && expectedRecord.amount > 0) updateEntries.amount = -updateEntries.amount;
+    else if (expectedRecord.type === 1 && expectedRecord.amount < 0) updateEntries.amount = -updateEntries.amount;
+
+    if (expectedRecord.fundID === expectedRecord.otherFundID) throw boom.conflict(
+      "Assignment funds (source and target) can't be equal."
     );
 
     if (updateEntries.date !== undefined) {
       updateEntries.date = new Date(updateEntries.date);
       updateEntries.date.setSeconds(1);
-      await this.validateDateAvailability({ date: updateEntries.date, userID, id }, { updating: true });
     }
 
     const updateKeys = Object
       .keys(updateEntries)
       .filter((key) => record.dataValues[key] !== updateEntries[key])
 
-    if (updateKeys.length === 0) throw boom.badRequest(
-      "The provided values didn't represent any change to originals."
-    );
+    if (updateKeys.length === 0) throw boom.badRequest("The provided values don't represent any change to originals.");
+    if (updateEntries.date !== undefined) await this.validateDateAvailability({ date: updateEntries.date, userID });
 
     const sensitiveKeys = ["fundID", "otherFundID", "date", "type", "amount"];
     const updatingSensitiveKey = updateKeys.some(key => sensitiveKeys.includes(key));
 
-    this.validateFundsCorrelation({
-      expectedRecord: { ...record.dataValues, ...updateEntries }
+    const recordIsAssignment = record.dataValues.type === 0;
+    if (!updatingSensitiveKey) [await record.update(updateEntries)];
+
+    await this.validateBalanceConsistency({
+      fundID: expectedRecord.fundID,
+      userID
+    }, {
+      includingRecord: expectedRecord,
+      excludingRecordID: record.dataValues.id
     });
 
-    const data = sequelize.transaction(async(transaction) => {
-      const recordIsAssignment = record.dataValues.type === 0;
-      const correlatedUpdates = recordIsAssignment ? this.defineCorrelatedRecord({ baseData: updateEntries }) : null;
-
-      if (!updatingSensitiveKey) {
-        if (!recordIsAssignment) return [await record.update({ ...updateEntries }, { transaction })];
-
-        const updatedRecord = await record.update({
-          ...updateEntries
-        }, { returning: true, transaction });
-        const updatedCorrelated = await correlatedRecord.update({
-          ...correlatedUpdates
-        }, { returning: true, transaction });
-        return [updatedRecord, updatedCorrelated];
-      }
-
-      await this.validateBalanceAvailability({
-        fundID: updateEntries.fundID || record.dataValues.fundID,
-        userID
-      },
-      {
-        includingRecord: { ...record.dataValues, ...updateEntries },
-        excludingID: record.dataValues.id, transaction
-      });
-
-      if (recordIsAssignment) await this.validateBalanceAvailability({
-        fundID: correlatedUpdates.fundID || correlatedRecord.dataValues.fundID,
-        userID
-      }, {
-        includingRecord: { ...correlatedRecord.dataValues, ...correlatedUpdates },
-        excludingID: correlatedRecord.dataValues.id, transaction
-      });
-
-      if (updateKeys.includes("fundID")) await this.validateBalanceAvailability({
-        fundID: record.dataValues.fundID,
-        userID
-      }, { excludingID: record.dataValues.id, transaction });
-
-      if (updateKeys.includes("otherFundID")) await this.validateBalanceAvailability({
-        fundID: record.dataValues.otherFundID,
-        userID
-      }, { excludingID: correlatedRecord.dataValues.id, transaction });
-      
-      const updatedRecord = await record.update(updateEntries, { returning: true, transaction });
-      if (!recordIsAssignment) return [updatedRecord];
-
-      const updatedCorrelated = await correlatedRecord.update(correlatedUpdates, { returning: true, transaction });
-      return [updatedRecord, updatedCorrelated];
+    if (recordIsAssignment) await this.validateBalanceConsistency({
+      fundID: expectedRecord.otherFundID,
+      userID
+    }, {
+      includingRecord: expectedRecord,
+      excludingRecordID: record.dataValues.id,
     });
 
-    return data;
+    if (updateKeys.includes("fundID") && expectedRecord.type === 1) await this.validateBalanceConsistency({
+      fundID: record.dataValues.fundID,
+      userID
+    }, { excludingRecordID: record.dataValues.id });
+
+    if (updateKeys.includes("otherFundID")) await this.validateBalanceConsistency({
+      fundID: record.dataValues.otherFundID,
+      userID
+    }, { excludingRecordID: record.dataValues.id });
+
+    return [await record.update(updateEntries, { returning: true })];
   };
 
   async delete ({ id, userID }) {
 
     const record = await this.findRecord({ id, userID });
-    const correlatedRecord = record.dataValues.type !== 0 ? null : await this.findRecord({
-      correlatedDate: new Date(record.dataValues.date),
+
+    if (record.dataValues.type === 1) await this.validateBalanceConsistency({
+      fundID: record.dataValues.fundID,
+      userID
+    }, { excludingRecordID: record.dataValues.id });
+
+    if (record.dataValues.type === 0) await this.validateBalanceConsistency({
       fundID: record.dataValues.otherFundID,
       userID
-    }, { isCorrelated: true });
+    }, { excludingRecordID: record.dataValues.id });
 
-    const data = sequelize.transaction(async(transaction) => {
-
-      if (record.dataValues.type === 1) await this.validateBalanceAvailability({
-        fundID: record.dataValues.fundID,
-        userID
-      }, { excludingID: record.dataValues.id, transaction });
-
-      const recordIsAssignment = record.dataValues.type === 0;
-
-      await record.destroy({ transaction });
-      if (!recordIsAssignment) return [record.dataValues.id];
-
-      await this.validateBalanceAvailability({
-        fundID: record.dataValues.otherFundID,
-        userID
-      }, { excludingID: correlatedRecord.dataValues.id, transaction });
-
-      await correlatedRecord.destroy({ transaction });
-
-      return [record.dataValues.id, correlatedRecord.dataValues.id];
-    });
-
-    return data;
+    await record.destroy();
+    return [record.dataValues.id];
   };
 
 }
