@@ -21,6 +21,7 @@ router.post('/otp', (req, res, next) => {
     try {
       const { body } = req;
       body.sign = (actionIsPublic(body.action)) ? body.email : req.user.sub;
+      if (!actionIsPublic(body.action)) body.email = req.user.email
       await service.sendOTP(body);
       res.send('A code was sent to the provided email. Please use it to complete the action.');
     } catch (error) {
@@ -62,13 +63,13 @@ router.post('/login',
   passport.authenticate('local', { session: false }),
   async (req, res, next) => {
     try {
-      const { id, funds, records } = req.user;
+      const { id, funds, records, preferences, email } = req.user;
       const secret = config.jwtSecret;
-      const payload = { sub: id };
+      const payload = { sub: id, email };
       const sign = jwt.sign(payload, secret, { expiresIn: "1h" });
       const { exp } = jwt.decode(sign, { secret });
       const token = { token: sign, exp };
-      const data = { token, records, funds };
+      const data = { token, records, funds, preferences };
       res.json(data);
     } catch (error) {
       next(error);

@@ -26,8 +26,8 @@ const LocalStrategy = new Strategy(
       const passwordMatch = await bcrypt.compare(providedPassword, userStored.dataValues.password);
       if (!passwordMatch) return done(boom.unauthorized("The email-password combination is not valid to log you in."), false);
 
-      const { id, funds, records } = userStored;
-      const user = { id, funds, records };
+      const { id, funds, records, preferences, email } = userStored;
+      const user = { id, funds, records, preferences, email };
       return done(null, user);
     } catch (error) {
       done(error, false);

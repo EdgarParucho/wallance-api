@@ -25,6 +25,14 @@ const userSchema = {
       len: [8]
     }
   },
+  preferences: {
+    type: DataTypes.JSONB,
+    defaultValue: {
+      theme: "dark",
+      records: [],
+      queries: []
+    }
+  }
 }
 
 class User extends Model{
