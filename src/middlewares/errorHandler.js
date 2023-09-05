@@ -18,7 +18,7 @@ function ORMErrorHandler(err, req, res, next) {
   if (err instanceof ValidationError) {
     res.status(409).json({
       statusCode: 409,
-      message: firstError.message,
+      message: err.message,
       errors: err.errors
     })
   }

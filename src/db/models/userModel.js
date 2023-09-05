@@ -28,7 +28,7 @@ const userSchema = {
   preferences: {
     type: DataTypes.JSONB,
     defaultValue: {
-      theme: "dark",
+      darkMode: false,
       records: [],
       queries: []
     }

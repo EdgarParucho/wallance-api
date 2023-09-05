@@ -53,9 +53,6 @@ class RecordService {
     const fund = await this.validateFundExistance({ id: fundID, userID });
     const fundRecords = await this.getFundRecords({ fundID, excludingRecordID });
 
-    if (fundRecords.length < 1) throw boom.conflict('The provided data would cause inconsistencies:'
-    + `\n${fund.name} has no records, therefore, no balance available on date.`)
-
     if (includingRecord) fundRecords.push(includingRecord);
     fundRecords.sort((a, b) => a.date - b.date);
 
@@ -64,7 +61,7 @@ class RecordService {
       const resultingBalance = (accumulatedBalance + recordAmount);
       if (resultingBalance < 0) throw boom.conflict('The provided data would cause inconsistencies.' +
       `\nOn: ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(record.date)}, `+
-      `fund's balance would be: ${accumulatedBalance.toFixed(2)} to cover the record's amount: ${Number(record.amount).toFixed(2)}.`
+      `fund's balance would be: ${Number(accumulatedBalance).toFixed(2) } to cover the record's amount: ${Number(record.amount).toFixed(2)}.`
       );
       return resultingBalance;
     }, 0)

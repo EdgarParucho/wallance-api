@@ -9,7 +9,7 @@ module.exports = {
     await queryInterface.addColumn(USER_TABLE, "preferences", {
       type: DataTypes.JSONB,
       defaultValue: {
-        theme: "dark",
+        darkMode: false,
         records: [],
         queries: []
       }
