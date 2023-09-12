@@ -54,7 +54,7 @@ class RecordService {
     const fundRecords = await this.getFundRecords({ fundID, excludingRecordID });
 
     if (includingRecord) fundRecords.push(includingRecord);
-    fundRecords.sort((a, b) => a.date - b.date);
+    fundRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     fundRecords.reduce((accumulatedBalance, record) => {
       const recordAmount = (record.fundID === fundID) ? Number(record.amount) : -Number(record.amount);
