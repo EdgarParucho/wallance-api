@@ -10,7 +10,7 @@ const sequelize = new Sequelize(URI, {
   dialect: 'postgres',
   logging: console.log,
   dialectOptions: {
-    ssl: true,
+    ssl: process.env.NODE_ENV === "production",
   }
 });
 
