@@ -8,7 +8,10 @@ const URI = `postgres://${USER}:${PASSWORD}@${config.dbHost}/${config.dbName}`;
 
 const sequelize = new Sequelize(URI, {
   dialect: 'postgres',
-  logging: console.log
+  logging: console.log,
+  dialectOptions: {
+    ssl: true,
+  }
 });
 
 setupModels(sequelize);
