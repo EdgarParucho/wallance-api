@@ -30,7 +30,8 @@ const userSchema = {
     defaultValue: {
       darkMode: false,
       records: [],
-      queries: []
+      queries: [],
+      language: "en"
     }
   }
 }
