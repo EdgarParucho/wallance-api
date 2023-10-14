@@ -4,6 +4,9 @@ const morgan = require('morgan');
 const routerAPI = require('./src/routes');
 const config = require('./src/config')
 const { logError, errorHandler, boomErrorHandler, ORMErrorHandler } = require('./src/middlewares/errorHandler')
+const db = require('./src/libs/sequelize');
+
+db.authenticate()
 
 if (process.env.NODE_ENV == 'development') require('dotenv').config()
 
