@@ -20,6 +20,7 @@ const LocalStrategy = new Strategy(
 
       Promise.all([recordService.find(userStored.id), fundService.find(userStored.id)])
         .then(([records, funds]) => done(null, {
+          id: userStored.id,
           preferences: userStored.preferences,
           email: userStored.email,
           funds,

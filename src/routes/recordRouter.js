@@ -6,18 +6,6 @@ const { createRecordSchema, updateRecordSchema, alterRecordSchema } = require('.
 const router = express.Router();
 const service = new RecordService();
 
-router.get('/',
-  async (req, res, next) => {
-    try {
-      const { sub: userID } = req.user;
-      const data = await service.find(userID);
-      res.json(data);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
 router.post('/',
   validatorHandler(createRecordSchema, 'body'),
   async (req, res, next) => {
