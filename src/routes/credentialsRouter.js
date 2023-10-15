@@ -69,7 +69,7 @@ router.post('/login',
       const sign = jwt.sign(payload, secret, { expiresIn: "1h" });
       const { exp } = jwt.decode(sign, { secret });
       const token = { token: sign, exp };
-      const data = { token, records, funds, preferences };
+      const data = { token, preferences, funds, records };
       res.json(data);
     } catch (error) {
       next(error);

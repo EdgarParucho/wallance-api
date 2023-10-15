@@ -12,6 +12,12 @@ class FundService {
 
   constructor() {}
 
+  async find(userID) {
+    const data = await Fund.findAll({ where: { userID }, attributes: { exclude: 'userID' }, raw: true });
+    if (data.length === 0) throw boom.notFound('There are no funds associated to the user.');
+    return data;
+  };
+
   async create(body) {
     const data = await Fund.create({ ...body, isDefault: false });
     delete data.dataValues.userID;
