@@ -7,8 +7,11 @@ class RecordService {
   constructor() {}
 
   async find(userID) {
-    const data = await models.Record.findAll({ where: { userID } });
-    if (data.length === 0) throw boom.notFound('There are no records associated to the user.');
+    const data = await models.Record.findAll({
+      where: { userID },
+      attributes: ['amount', 'otherFundID', 'fundID'],
+      raw: true
+    });
     return data;
   };
 
