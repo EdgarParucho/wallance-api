@@ -9,7 +9,7 @@ class RecordService {
   async find(userID) {
     const data = await models.Record.findAll({
       where: { userID },
-      attributes: ['amount', 'otherFundID', 'fundID'],
+      attributes: { exclude: ['createdAt', 'updatedAt', 'userID'] },
       raw: true
     });
     return data;
