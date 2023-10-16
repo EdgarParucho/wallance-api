@@ -5,12 +5,11 @@ const PASSWORD = encodeURIComponent(config.dbPassword);
 const URI = `postgresql://${USER}:${PASSWORD}@${config.dbHost}:${config.dbPort}/${config.dbName}`;
 
 module.exports = {
-  development: {
+  development:{
     url: URI,
     dialect: 'postgres',
-  },
-  production: {
-    url: URI,
-    dialect: 'postgres',
+    dialectOptions: {
+      ssl: true
+    }
   }
 }

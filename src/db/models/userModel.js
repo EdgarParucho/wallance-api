@@ -29,7 +29,7 @@ const userSchema = {
     type: DataTypes.JSONB,
     defaultValue: {
       darkMode: false,
-      records: [],
+      templates: [],
       queries: [],
       language: "en"
     }
