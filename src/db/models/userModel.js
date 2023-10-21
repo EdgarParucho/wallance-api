@@ -31,6 +31,7 @@ const userSchema = {
       darkMode: false,
       templates: [],
       queries: [],
+      FirstStepsStatus: ["Active", "Active", "Active"],
       language: "en"
     }
   }
