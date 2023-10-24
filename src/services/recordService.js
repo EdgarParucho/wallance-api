@@ -1,19 +1,33 @@
 const { models } = require('../libs/sequelize');
 const { Op } = require('sequelize');
 const boom = require('@hapi/boom');
+const sequelize = require('../libs/sequelize');
 
 class RecordService {
 
   constructor() {}
 
-  async find(userID) {
+  async find(filters) {
+    const normalizedFilters = this.normalizeQueryFilters(filters);
     const data = await models.Record.findAll({
-      where: { userID },
+      where: normalizedFilters,
       attributes: { exclude: ['createdAt', 'updatedAt', 'userID'] },
       raw: true
     });
     return data;
   };
+
+  normalizeQueryFilters(filters) {
+    let normalizedFilters = { userID: filters.userID };
+    if (filters.fromDate !== undefined && filters.toDate !== undefined) normalizedFilters.date = { [Op.between]: [new Date(filters.fromDate), new Date(filters.toDate)] }
+    else if (filters.fromDate !== undefined) normalizedFilters.date = { [Op.gte ]: new Date(filters.fromDate) }
+    else if (filters.toDate !== undefined) normalizedFilters.date = { [Op.lte ]: new Date(filters.toDate) }
+    if (filters.fundID !== undefined) normalizedFilters = {
+      ...normalizedFilters,
+      [Op.or]: [{ fundID: filters.fundID }, { otherFundID: filters.fundID }]
+    };
+    return normalizedFilters;
+  }
 
   async validateDateAvailability({ date, userID }) {
     const recordsOnDate = await models.Record.count({ where: { date, userID } });
@@ -23,7 +37,7 @@ class RecordService {
     else return
   };
 
-  async validateFundExistance({ id, userID }) {
+  async validateFund({ id, userID }) {
     const fund = await models.Fund.findByPk(id);
     if (fund === null) throw boom.notFound("Could not find the requested Fund.")
     if (fund.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action.")
@@ -51,25 +65,32 @@ class RecordService {
     return fundRecords;
   };
 
-  async validateBalanceConsistency({ fundID, userID }, { excludingRecordID, includingRecord }) {
+  async updateBalance({ fundID, userID }, { excludingRecordID, includingRecord, transaction }) {
 
-    const fund = await this.validateFundExistance({ id: fundID, userID });
-    const fundRecords = await this.getFundRecords({ fundID, excludingRecordID });
+    const fundRecords = await this.getFundRecords({ fundID, excludingRecordID, transaction });
 
     if (includingRecord) fundRecords.push(includingRecord);
     fundRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    fundRecords.reduce((accumulatedBalance, record) => {
+    const fundBalance = fundRecords.reduce((accumulatedBalance, record) => {
       const recordAmount = (record.fundID === fundID) ? Number(record.amount) : -Number(record.amount);
       const resultingBalance = (accumulatedBalance + recordAmount);
+
       if (resultingBalance < 0) throw boom.conflict('The provided data would cause inconsistencies.' +
       `\nOn: ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(record.date)}, `+
       `fund's balance would be: ${Number(accumulatedBalance).toFixed(2) } to cover the record's amount: ${Number(record.amount).toFixed(2)}.`
       );
-      return resultingBalance;
-    }, 0)
 
-    return
+      return resultingBalance;
+    }, 0);
+
+    const updatedFund = models.Fund.update({ balance: fundBalance}, { where: { id: fundID, userID }, transaction, returning: true, plain: true })
+      .then(result => {
+        const raw = result[1].dataValues;
+        delete raw.userID
+        return raw;
+      });
+    return updatedFund;
   };
 
   async findRecord({ id, userID }) {
@@ -85,22 +106,37 @@ class RecordService {
     body.date.setSeconds(1);
 
     await this.validateDateAvailability({ date: body.date, userID: body.userID });
-    const fund = await this.validateFundExistance({ id: body.fundID, userID: body.userID });
+    const fund = await this.validateFund({ id: body.fundID, userID: body.userID });
     if (body.type === 1 && !fund.dataValues.isDefault) throw boom.conflict("Credits must be saved in default fund");
-    if (body.type === 0) await this.validateFundExistance({
+    if (body.type === 0) await this.validateFund({
       id: body.otherFundID,
       userID: body.userID
     });
 
-    if (body.type !== 1 && body.amount > 0) body.amount = -body.amount;
-    else if (body.type === 1 && body.amount < 0) body.amount = -body.amount;
+    const data = await sequelize.transaction(async(transaction) => {
+      const updatedFunds = [];
 
-    if (body.type !== 1) await this.validateBalanceConsistency({
-      fundID: body.fundID,
-      userID: body.userID
-    }, { includingRecord: body });
+      updatedFunds.push(await this.updateBalance({
+        fundID: body.fundID,
+        userID: body.userID
+      }, { includingRecord: body, transaction }));
 
-    return [await models.Record.create(body)];
+      if (body.type === 0) updatedFunds.push(await this.updateBalance({
+        fundID: body.otherFundID,
+        userID: body.userID
+      }, { includingRecord: body, transaction }));
+
+      const record = await models.Record.create(body, { transaction, returning: true, plain: true })
+        .then(result => {
+          const raw = result.dataValues;
+          delete raw.userID
+          return raw;
+        });
+
+      return { record, funds: updatedFunds };
+    });
+
+    return data;
   };
 
   async update({ id, body: updateEntries }, userID) {
@@ -133,51 +169,68 @@ class RecordService {
     const recordIsAssignment = record.dataValues.type === 0;
     if (!updatingSensitiveKey) [await record.update(updateEntries)];
 
-    await this.validateBalanceConsistency({
-      fundID: expectedRecord.fundID,
-      userID
-    }, {
-      includingRecord: expectedRecord,
-      excludingRecordID: record.dataValues.id
+    const data = await sequelize.transaction(async(transaction) => {
+      const updatedFunds = [];
+      updatedFunds.push(await this.updateBalance({
+        fundID: expectedRecord.fundID,
+        userID
+      }, {
+        includingRecord: expectedRecord,
+        excludingRecordID: record.dataValues.id,
+        transaction,
+      }));
+
+      if (recordIsAssignment) updatedFunds.push(await this.updateBalance({
+        fundID: expectedRecord.otherFundID,
+        userID
+      }, {
+        includingRecord: expectedRecord,
+        excludingRecordID: record.dataValues.id,
+        transaction,
+      }));
+
+      if (updateKeys.includes("fundID")) updatedFunds.push(await this.updateBalance({
+        fundID: record.dataValues.fundID,
+        userID
+      }, { excludingRecordID: record.dataValues.id, transaction }));
+
+      if (updateKeys.includes("otherFundID")) updatedFunds.push(await this.updateBalance({
+        fundID: record.dataValues.otherFundID,
+        userID
+      }, { excludingRecordID: record.dataValues.id, transaction }));
+
+      const updatedRecord = await record.update(updateEntries, { transaction, returning: true, plain: true })
+        .then(result => {
+          const raw = result.dataValues;
+          delete raw.userID
+          return raw;
+        });
+
+      return { record: updatedRecord, funds: updatedFunds };
     });
-
-    if (recordIsAssignment) await this.validateBalanceConsistency({
-      fundID: expectedRecord.otherFundID,
-      userID
-    }, {
-      includingRecord: expectedRecord,
-      excludingRecordID: record.dataValues.id,
-    });
-
-    if (updateKeys.includes("fundID") && expectedRecord.type === 1) await this.validateBalanceConsistency({
-      fundID: record.dataValues.fundID,
-      userID
-    }, { excludingRecordID: record.dataValues.id });
-
-    if (updateKeys.includes("otherFundID")) await this.validateBalanceConsistency({
-      fundID: record.dataValues.otherFundID,
-      userID
-    }, { excludingRecordID: record.dataValues.id });
-
-    return [await record.update(updateEntries, { returning: true })];
+    return data;
   };
 
   async delete ({ id, userID }) {
-
     const record = await this.findRecord({ id, userID });
+    const data = await sequelize.transaction(async(transaction) => {
+      const updatedFunds = [];
+      updatedFunds.push(await this.updateBalance({
+        fundID: record.dataValues.fundID,
+        userID
+      }, { excludingRecordID: record.dataValues.id, transaction }));
+  
+      if (record.dataValues.type === 0) updatedFunds.push(await this.updateBalance({
+        fundID: record.dataValues.otherFundID,
+        userID
+      }, { excludingRecordID: record.dataValues.id, transaction }));
 
-    if (record.dataValues.type === 1) await this.validateBalanceConsistency({
-      fundID: record.dataValues.fundID,
-      userID
-    }, { excludingRecordID: record.dataValues.id });
+      await record.destroy({ transaction });
 
-    if (record.dataValues.type === 0) await this.validateBalanceConsistency({
-      fundID: record.dataValues.otherFundID,
-      userID
-    }, { excludingRecordID: record.dataValues.id });
+      return { record: { id }, funds: updatedFunds };
+    });
 
-    await record.destroy();
-    return [record.dataValues.id];
+    return data;
   };
 
 }

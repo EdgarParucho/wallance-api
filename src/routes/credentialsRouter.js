@@ -63,13 +63,13 @@ router.post('/login',
   passport.authenticate('local', { session: false }),
   async (req, res, next) => {
     try {
-      const { id, funds, records, preferences, email } = req.user;
+      const { id, funds, preferences, email } = req.user;
       const secret = config.jwtSecret;
       const payload = { sub: id, email };
       const sign = jwt.sign(payload, secret, { expiresIn: "1h" });
       const { exp } = jwt.decode(sign, { secret });
       const token = { token: sign, exp };
-      const data = { token, preferences, funds, records };
+      const data = { token, preferences, funds };
       res.json(data);
     } catch (error) {
       next(error);

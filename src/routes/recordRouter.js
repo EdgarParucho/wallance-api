@@ -13,8 +13,20 @@ router.post('/',
       const { body } = req;
       const { sub: userID } = req.user;
       const data = await service.create({ ...body, userID });
-      data.forEach(r => delete r.dataValues.userID)
       res.status(201).json(data);
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+router.get('/',
+  async (req, res, next) => {
+    try {
+      const { sub: userID } = req.user;
+      const filters = req.query;
+      const data = await service.find({ userID, ...filters });
+      res.status(200).json(data);
     } catch (error) {
       next(error);
     }
@@ -30,8 +42,6 @@ router.patch('/:id',
       const { id } = req.params;
       const { sub: userID } = req.user;
       const data = await service.update({ id, body }, userID);
-      console.log(data);
-      data.forEach(r => delete r.dataValues.userID)
       res.json(data);
     } catch (error) {
       next(error);

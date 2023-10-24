@@ -5,6 +5,10 @@ const FUND_TABLE = 'funds';
 const fundSchema = {
   id: { allowNull: false, primaryKey: true, unique: true, type: DataTypes.UUID, defaultValue: Sequelize.UUIDV4 },
   name: { allowNull: false, type: DataTypes.STRING },
+  balance: {
+    type: DataTypes.FLOAT,
+    defaultValue: 0,
+  },
   description: { allowNull: false, type: DataTypes.STRING },
   isDefault: { allowNull: false, type: DataTypes.BOOLEAN, field: 'is_default' },
   userID: {

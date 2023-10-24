@@ -6,7 +6,7 @@ const date = Joi.date();
 const note = Joi.string().allow("");
 const tag = Joi.string().allow("");
 const fundID = id;
-const otherFundID = id;
+const otherFundID = id.allow(null, "");
 const type = Joi.number();
 
 const createRecordSchema = Joi.object({

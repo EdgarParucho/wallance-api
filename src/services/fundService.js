@@ -41,29 +41,31 @@ class FundService {
       if (deletingFund === null) throw boom.notFound('Fund not found.');
       if (deletingFund.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized to update this fund.");
       if (deletingFund.dataValues.isDefault) throw boom.conflict('Cannot delete the default fund.');
-      
-      const fundRecords = await recordService.getFundRecords({ fundID: id, transaction });
-      const fundBalance = fundRecords.reduce((accumulatedBalance, record) => {
-        const resultingBalance = accumulatedBalance + record.amount;
-        return resultingBalance;
-      }, 0);
-  
-      if (fundBalance > 0) throw boom.conflict('Cannot delete a fund with positive balance.');
+      if (deletingFund.balance > 0) throw boom.conflict('Cannot delete a fund with positive balance.');
 
       const defaultFund = await Fund.findOne({ where: { userID, isDefault: true }, raw: true, transaction })
-      const deletingOrDefaultFund = { [Op.or]: [defaultFund.id, id] };
 
       await Record.destroy({
         where: {
-          fundID: deletingOrDefaultFund,
-          otherFundID: deletingOrDefaultFund
+          fundID: {
+            [Op.or]: [defaultFund.id, deletingFund.dataValues.id]
+          },
+          otherFundID: {
+            [Op.or]: [defaultFund.id, deletingFund.dataValues.id]
+          }
         },
         transaction,
       });
 
-      await Record.update({ fundID: defaultFund.id }, { where: { fundID: id }, transaction, });
-      await Record.update({ otherFundID: defaultFund.id }, { where: { otherFundID: id }, transaction, });
+      await Record.update({
+        fundID: defaultFund.id
+      }, { where: { fundID: deletingFund.dataValues.id }, transaction, });
 
+      await Record.update({
+        otherFundID: defaultFund.id
+      }, { where: { otherFundID: deletingFund.dataValues.id }, transaction, });
+
+      await recordService.updateBalance({ fundID: defaultFund.id, userID }, { transaction });
       await deletingFund.destroy({ transaction });
       return id;
     });
