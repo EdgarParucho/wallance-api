@@ -29,8 +29,10 @@ class RecordService {
     return normalizedFilters;
   }
 
-  async validateDateAvailability({ date, userID }) {
-    const recordsOnDate = await models.Record.count({ where: { date, userID } });
+  async validateDateAvailability({ date, userID, id = null }) {
+    const filters = { date, userID };
+    if (id) filters.id = { [Op.not]: id };
+    const recordsOnDate = await models.Record.count({ where: filters });
     if (recordsOnDate > 0) throw boom.conflict(
       "You have a record at the same date-time combination. Please pick a different to avoid inconsistencies."
     )
@@ -161,7 +163,7 @@ class RecordService {
       .filter((key) => record.dataValues[key] !== updateEntries[key])
 
     if (updateKeys.length === 0) throw boom.badRequest("The provided values don't represent any change to originals.");
-    if (updateEntries.date !== undefined) await this.validateDateAvailability({ date: updateEntries.date, userID });
+    if (updateEntries.date !== undefined) await this.validateDateAvailability({ date: updateEntries.date, userID, id });
 
     const sensitiveKeys = ["fundID", "otherFundID", "date", "type", "amount"];
     const updatingSensitiveKey = updateKeys.some(key => sensitiveKeys.includes(key));
