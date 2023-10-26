@@ -8,9 +8,9 @@ class RecordService {
   constructor() {}
 
   async find(filters) {
-    const normalizedFilters = this.normalizeQueryFilters(filters);
+    this.normalizeQueryFilters(filters);
     const data = await models.Record.findAll({
-      where: normalizedFilters,
+      where: filters,
       attributes: { exclude: ['createdAt', 'updatedAt', 'userID'] },
       raw: true
     });
@@ -18,15 +18,26 @@ class RecordService {
   };
 
   normalizeQueryFilters(filters) {
-    let normalizedFilters = { userID: filters.userID };
-    if (filters.fromDate !== undefined && filters.toDate !== undefined) normalizedFilters.date = { [Op.between]: [new Date(filters.fromDate), new Date(filters.toDate)] }
-    else if (filters.fromDate !== undefined) normalizedFilters.date = { [Op.gte ]: new Date(filters.fromDate) }
-    else if (filters.toDate !== undefined) normalizedFilters.date = { [Op.lte ]: new Date(filters.toDate) }
-    if (filters.fundID !== undefined) normalizedFilters = {
-      ...normalizedFilters,
-      [Op.or]: [{ fundID: filters.fundID }, { otherFundID: filters.fundID }]
-    };
-    return normalizedFilters;
+    if (filters.fromDate !== undefined && filters.toDate !== undefined) {
+      filters.date = { [Op.between]: [new Date(filters.fromDate), new Date(filters.toDate)] }
+      delete filters.fromDate;
+      delete filters.toDate;
+    }
+    else if (filters.fromDate !== undefined) {
+      filters.date = { [Op.gte ]: new Date(filters.fromDate) }
+      delete filters.fromDate;
+    }
+    else if (filters.toDate !== undefined) {
+      filters.date = { [Op.lte ]: new Date(filters.toDate) }
+      delete filters.toDate;
+    }
+    if (filters.fundID !== undefined) {
+      filters = {
+        ...filters,
+        [Op.or]: [{ fundID: filters.fundID }, { otherFundID: filters.fundID }]
+      };
+      delete filters.fundID;
+    }
   }
 
   async validateDateAvailability({ date, userID, id = null }) {
