@@ -1,7 +1,8 @@
-const { models } = require('../libs/sequelize');
-const { Op } = require('sequelize');
 const boom = require('@hapi/boom');
-const sequelize = require('../libs/sequelize');
+const { Op } = require('sequelize');
+
+const sequelize = require('../dataAccess/sequelize');
+const { models } = require('../dataAccess/sequelize');
 
 class RecordService {
 
@@ -9,7 +10,6 @@ class RecordService {
 
   async find(filters) {
     this.normalizeQueryFilters(filters);
-    console.log(filters);
     const data = await models.Record.findAll({
       where: filters,
       attributes: { exclude: ['createdAt', 'updatedAt', 'userID'] },
@@ -149,7 +149,7 @@ class RecordService {
     return data;
   };
 
-  async update({ id, body: updateEntries }, userID) {
+  async update({ id, updateEntries, userID }) {
 
     const record = await this.findRecord({ id, userID });
     const expectedRecord = { ...record.dataValues, ...updateEntries };

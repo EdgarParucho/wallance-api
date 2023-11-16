@@ -1,5 +1,4 @@
 module.exports = {
-  "config": "./src/db/config.js",
-  "models-path": "./src/db/models/",
-  "seeders-path": "./src/db/seeders/",
+  "config": "./src/config/database.js",
+  "models-path": "./src/models/",
 }

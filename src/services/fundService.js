@@ -1,7 +1,8 @@
 const boom = require('@hapi/boom')
-const { models } = require('../libs/sequelize');
 const { Op } = require('sequelize');
-const sequelize = require('../libs/sequelize');
+
+const { models } = require('../dataAccess/sequelize');
+const sequelize = require('../dataAccess/sequelize');
 
 const { Fund, Record } = models;
 
@@ -11,12 +12,6 @@ const recordService = new RecordService();
 class FundService {
 
   constructor() {}
-
-  async find(userID) {
-    const data = await Fund.findAll({ where: { userID }, attributes: { exclude: 'userID' }, raw: true });
-    if (data.length === 0) throw boom.notFound('There are no funds associated to the user.');
-    return data;
-  };
 
   async create(body) {
     const data = await Fund.create({ ...body, isDefault: false });

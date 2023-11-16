@@ -1,14 +1,20 @@
+if (process.env.NODE_ENV == 'development') require('dotenv').config()
+
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+
 const routerAPI = require('./src/routes');
 const config = require('./src/config')
-const { logError, errorHandler, boomErrorHandler, ORMErrorHandler } = require('./src/middlewares/errorHandler')
-const db = require('./src/libs/sequelize');
+const db = require('./src/dataAccess/sequelize');
+const {
+  logError,
+  errorHandler,
+  boomErrorHandler,
+  ORMErrorHandler
+} = require('./src/middleware/errorHandler')
 
 db.authenticate()
-
-if (process.env.NODE_ENV == 'development') require('dotenv').config()
 
 const app = express();
 const port = process.env.PORT || 3000;

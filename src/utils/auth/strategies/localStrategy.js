@@ -1,12 +1,10 @@
-const { Strategy } = require('passport-local');
-const boom = require('@hapi/boom');
 const bcrypt = require('bcrypt');
-const { models } = require('../../../libs/sequelize');
-const RecordService = require('../../../services/recordService');
-const FundService = require('../../../services/fundService');
+const boom = require('@hapi/boom');
+const { Strategy } = require('passport-local');
 
-const recordService = new RecordService;
-const fundService = new FundService;
+const { models } = require('../../../dataAccess/sequelize');
+
+const unauthorizedMsg = "The email-password combination is not valid to log you in.";
 
 const LocalStrategy = new Strategy(
   { usernameField: 'email' },
@@ -19,10 +17,10 @@ const LocalStrategy = new Strategy(
           attributes: { exclude: "userID" }
         }]
       });
-      if (userStored === null) return done(boom.unauthorized("The email-password combination is not valid to log you in."), false);
+      if (userStored === null) return done(boom.unauthorized(unauthorizedMsg), false);
 
       const passwordMatch = await bcrypt.compare(providedPassword, userStored.dataValues.password)
-      if (!passwordMatch) return done(boom.unauthorized("The email-password combination is not valid to log you in."), false);
+      if (!passwordMatch) return done(boom.unauthorized(unauthorizedMsg), false);
 
       return done(null, {
         id: userStored.dataValues.id,

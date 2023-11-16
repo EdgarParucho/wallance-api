@@ -1,5 +1,5 @@
 const boom = require('@hapi/boom');
-const { models } = require('../libs/sequelize');
+const { models } = require('../dataAccess/sequelize');
 const bcrypt = require('bcrypt');
 const { service: credentialsService } = require('../routes/credentialsRouter');
 
