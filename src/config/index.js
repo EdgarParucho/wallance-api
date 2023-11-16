@@ -1,4 +1,4 @@
-require('dotenv').config();
+const { mailHost, mailPort, mailUser, mailPass } = require('./mail');
 
 const config = {
   env: process.env.NODE_ENV || 'dev',
@@ -9,10 +9,10 @@ const config = {
   dbName: process.env.DB_NAME,
   dbPort: process.env.DB_PORT,
   jwtSecret: process.env.JWT_SECRET,
-  mailHost: process.env.MAIL_HOST,
-  mailPort: process.env.MAIL_PORT,
-  mailUser: process.env.MAIL_USER,
-  mailPass: process.env.MAIL_PASS,
+  mailHost,
+  mailPort,
+  mailUser,
+  mailPass,
 }
 
 module.exports = config;

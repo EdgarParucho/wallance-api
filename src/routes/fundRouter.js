@@ -1,51 +1,41 @@
 const express = require('express');
-const FundService = require('../services/fundService');
-const validatorHandler = require('../middlewares/validatorHandler');
-const { createFundSchema, updateFundSchema, fundIDSchema, deleteFundSchema } = require('../schemas/fundSchema');
+const fundController = require('../controllers/fundController');
+const validatorHandler = require('../middleware/validatorHandler');
+const {
+  createFundSchema,
+  updateFundSchema,
+  fundIDSchema,
+} = require('../middleware/schemaValidation/fundSchema');
 
 const router = express.Router();
-const service = new FundService();
 
-router.post('/',
-  validatorHandler(createFundSchema, 'body'),
-  async (req, res, next) => {
-    try {
-      const { body } = req;
-      const { sub: userID } = req.user;
-      const data = await service.create({ ...body, userID });
-      res.status(201).json(data);
-    } catch (error) {
-      next(error);
-    }
-  }
-);
-
+router.post('/', validatorHandler(createFundSchema, 'body'), createFundHandler);
 router.patch('/:id',
-validatorHandler(fundIDSchema, 'params'),
-validatorHandler(updateFundSchema, 'body'),
-async (req, res, next) => {
-  try {
-    const userID = req.user.sub;
-    const { id } = req.params;
-    const { body } = req;
-    const data = await service.update(userID, id, body);
-    res.json(data);
-  } catch (error) {
-    next(error);
-  }
-});
+  validatorHandler(fundIDSchema, 'params'),
+  validatorHandler(updateFundSchema, 'body'),
+  patchFundHandler,
+)
+router.delete('/:id', validatorHandler(fundIDSchema, 'params'), deleteFundHandler, );
 
-router.delete('/:id',
-validatorHandler(fundIDSchema, 'params'),
-async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { sub: userID } = req.user;
-    const data = await service.delete({ userID, id });
-    res.json(data);
-  } catch (error) {
-    next(error)
-  }
-});
+function createFundHandler(req, res, next) {
+  const payload = { ...req.body, userID: req.user.sub };
+  fundController.createFund(payload)
+    .then((data) => res.status(201).json(data))
+    .catch((error) => next(error))
+}
+
+function patchFundHandler(req, res, next) {
+  const payload = { updateEntries: req.body, id: req.params.id, userID: req.user.sub };
+  fundController.patchFund(payload)
+    .then((data) => res.json(data))
+    .catch((error) => next(error))
+}
+
+function deleteFundHandler(req, res, next) {
+  const payload = { id: req.params.id, userID: req.user.sub }
+  fundController.deleteFund(payload)
+    .then((data) => res.json(data))
+    .catch((error) => next(error))
+}
 
 module.exports = router;
