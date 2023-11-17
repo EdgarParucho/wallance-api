@@ -39,6 +39,7 @@ function validateAuthentication(req, res, next) {
 }
 
 function validateOTP(req, res, next) {
+  if (req.body.preferences && !req.body.email && !req.body.password) return next()
   const OTP = req.header('OTP');
   const email = req.body.email || req.user.email;
   const payload = { code: OTP, sub: email };
