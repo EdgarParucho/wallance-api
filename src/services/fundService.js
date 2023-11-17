@@ -19,7 +19,7 @@ class FundService {
     return data;
   };
 
-  async update(userID, id, body) {
+  async update({ userID, id, body }) {
     const fund = await Fund.findByPk(id);
     if (fund === null) throw boom.notFound("The requested fund wasn't found.")
     if (fund.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action");
