@@ -1,21 +1,25 @@
 const express = require('express');
 const fundController = require('../controllers/fundController');
-const validatorHandler = require('../middleware/validatorHandler');
-const {
-  createFundSchema,
-  updateFundSchema,
-  fundIDSchema,
-} = require('../middleware/schemaValidation/fundSchema');
+const payloadValidator = require('../middleware/payloadValidator');
+const { createFundSchema, updateFundSchema, alterFundSchema } = require('../thirdParty/joi/fundSchema');
 
 const router = express.Router();
 
-router.post('/', validatorHandler(createFundSchema, 'body'), createFundHandler);
+router.post('/',
+payloadValidator({ schema: createFundSchema, key: 'body' }),
+createFundHandler
+);
+
 router.patch('/:id',
-  validatorHandler(fundIDSchema, 'params'),
-  validatorHandler(updateFundSchema, 'body'),
+  payloadValidator({ schema: alterFundSchema, key: 'params' }),
+  payloadValidator({ schema: updateFundSchema, key: 'body' }),
   patchFundHandler,
 )
-router.delete('/:id', validatorHandler(fundIDSchema, 'params'), deleteFundHandler, );
+
+router.delete('/:id',
+payloadValidator({ schema: alterFundSchema, key: 'params'}),
+deleteFundHandler,
+);
 
 function createFundHandler(req, res, next) {
   const payload = { ...req.body, userID: req.user.sub };

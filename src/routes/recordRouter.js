@@ -1,21 +1,26 @@
 const express = require('express');
 const recordController = require('../controllers/recordController');
-const validatorHandler = require('../middleware/validatorHandler');
-const {
-  createRecordSchema,
-  updateRecordSchema,
-  alterRecordSchema
-} = require('../middleware/schemaValidation/recordSchema');
+const payloadValidator = require('../middleware/payloadValidator');
+const { createRecordSchema, updateRecordSchema, alterRecordSchema } = require('../thirdParty/joi/recordSchema');
 
 const router = express.Router();
 
-router.post('/', validatorHandler(createRecordSchema, 'body'), createRecordHandler);
+router.post('/',
+payloadValidator({ schema: createRecordSchema, key: 'body' }),
+createRecordHandler,
+);
+
 router.get('/', getRecordsHandler);
 
 router.patch('/:id',
-  validatorHandler(alterRecordSchema, 'params'),
-  validatorHandler(updateRecordSchema, 'body'),
-  patchRecordHandler
+payloadValidator({ schema: alterRecordSchema, key: 'params' }),
+payloadValidator({ schema: updateRecordSchema, key: 'body' }),
+patchRecordHandler,
+);
+
+router.delete('/:id',
+payloadValidator({ schema: alterRecordSchema, key: 'params' }),
+deleteRecordHandler
 );
 
 function createRecordHandler(req, res, next) {
@@ -25,7 +30,6 @@ function createRecordHandler(req, res, next) {
     .catch((error) => next(error))
 }
 
-// filters must be validated with Joi
 function getRecordsHandler(req, res, next) {
   const payload = { ...req.query, userID: req.user.sub };
   recordController.getRecords(payload)
@@ -40,7 +44,6 @@ function patchRecordHandler(req, res, next) {
     .catch((error) => next(error))
 }
 
-router.delete('/:id', validatorHandler(alterRecordSchema, 'params'), deleteRecordHandler);
 function deleteRecordHandler(req, res, next) {
   const payload = { id: req.params.id, userID: req.user.sub };
   recordController.deleteRecord(payload)
