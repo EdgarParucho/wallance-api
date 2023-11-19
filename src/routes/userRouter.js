@@ -3,41 +3,40 @@ const passport = require('passport');
 const userController = require('../controllers/userController.js');
 const authController = require('../controllers/authController.js');
 const payloadValidator = require('../middleware/payloadValidator.js');
-const { createUserSchema, updateUserSchema } = require('../middleware/payloadSchemas/userSchema.js');
+const { createUserSchema, updateUserSchema } = require('../thirdParty/joi/userSchema.js');
 
 const router = express.Router();
 
 router.post('/',
-  // TODO: payload validation handler
-  validateOTP,
+  payloadValidator({ schema: createUserSchema, key: 'body' }),
+  OTPValidator,
   createUser,
 )
 
 router.patch('/',
   payloadValidator({ schema: updateUserSchema, key: 'body' }),
-  validateAuthentication,
-  validateOTP,
-  patchUser
+  authenticator,
+  OTPValidator,
+  patchUserHandler,
 );
 
 router.patch('/reset',
   payloadValidator({ schema: createUserSchema, key: 'body' }),
-  validateOTP,
+  OTPValidator,
   resetPasswordHandler,
 );
 
 router.delete('/',
-  // TODO: payload validation handler
-  validateAuthentication,
-  validateOTP,
-  deleteUser
+  authenticator,
+  OTPValidator,
+  deleteUserHandler,
 );
 
-function validateAuthentication(req, res, next) {
+function authenticator(req, res, next) {
   passport.authenticate('jwt', { session: false })(req, res, next)
 }
 
-function validateOTP(req, res, next) {
+function OTPValidator(req, res, next) {
   if (req.body.preferences && !req.body.email && !req.body.password) return next()
   const OTP = req.header('OTP');
   const email = req.body.email || req.user.email;
@@ -54,14 +53,14 @@ function createUser(req, res, next) {
     .catch((error) => next(error))
 }
 
-function patchUser(req, res, next) {
+function patchUserHandler(req, res, next) {
   const payload = { updateEntries: req.body, id: req.user.sub };
   userController.patchUser(payload)
     .then((data) => res.status(200).json(data))
     .catch((error) => next(error))
 }
 
-function deleteUser(req, res, next) {
+function deleteUserHandler(req, res, next) {
   const payload = req.user.sub;
   userController.deleteUser(payload)
     .then((data) => res.json(data))

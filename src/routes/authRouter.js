@@ -1,17 +1,15 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const passport = require('passport');
 
-const config = require('../config/index.js');
 const authController = require('../controllers/authController.js');
 const payloadValidator = require('../middleware/payloadValidator.js');
-const { OTPRequestSchema, loginSchema } = require('../middleware/payloadSchemas/authSchema.js');
+const { OTPRequestSchema, loginSchema } = require('../thirdParty/joi/authSchema.js');
 
 const router = express.Router();
 
 router.post('/otp',
 payloadValidator({ schema: OTPRequestSchema, key: 'body' }),
-(req, res, next) => (req.body.email) ? next() : authValidator(req, res, next),
+(req, res, next) => (req.body.email) ? next() : authenticator(req, res, next),
 OTPCreationHandler,
 );
 
@@ -21,7 +19,7 @@ passport.authenticate('local', { session: false }),
 loginHandler,
 );
 
-function authValidator(req, res, next) {
+function authenticator(req, res, next) {
   passport.authenticate('jwt', { session: false })(req, res, next)
 }
 

@@ -1,5 +1,5 @@
-const transporter = require('../../thirdParty/emailService');
-const { mailUser } = require('../../config');
+const transporter = require('../thirdParty/nodemailer');
+const { mailUser } = require('../config');
 
 const disclaimer = "If you don't recognize this action, please report the irregularity.";
 

@@ -2,9 +2,9 @@ const boom = require('@hapi/boom');
 const jwt = require('jsonwebtoken');
 const { v1: uuidv1 } = require('uuid');
 
-const { models } = require('../dataAccess/sequelize');
-const mailOTP = require('../utils/email/mailOTP');
+const mailOTP = require('../utils/mailOTP');
 const config = require('../config/index.js');
+const { models } = require('../dataAccess/sequelize');
 
 class AuthService {
 

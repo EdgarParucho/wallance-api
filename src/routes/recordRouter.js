@@ -1,11 +1,7 @@
 const express = require('express');
 const recordController = require('../controllers/recordController');
 const payloadValidator = require('../middleware/payloadValidator');
-const {
-  createRecordSchema,
-  updateRecordSchema,
-  alterRecordSchema
-} = require('../middleware/payloadSchemas/recordSchema');
+const { createRecordSchema, updateRecordSchema, alterRecordSchema } = require('../thirdParty/joi/recordSchema');
 
 const router = express.Router();
 
@@ -14,10 +10,7 @@ payloadValidator({ schema: createRecordSchema, key: 'body' }),
 createRecordHandler,
 );
 
-router.get('/',
-// TODO: Payload validation
-getRecordsHandler,
-);
+router.get('/', getRecordsHandler);
 
 router.patch('/:id',
 payloadValidator({ schema: alterRecordSchema, key: 'params' }),

@@ -1,7 +1,7 @@
 const express = require('express');
 const fundController = require('../controllers/fundController');
 const payloadValidator = require('../middleware/payloadValidator');
-const { createFundSchema, updateFundSchema, fundIDSchema } = require('../middleware/payloadSchemas/fundSchema');
+const { createFundSchema, updateFundSchema, alterFundSchema } = require('../thirdParty/joi/fundSchema');
 
 const router = express.Router();
 
@@ -11,13 +11,13 @@ createFundHandler
 );
 
 router.patch('/:id',
-  payloadValidator({ schema: fundIDSchema, key: 'params' }),
+  payloadValidator({ schema: alterFundSchema, key: 'params' }),
   payloadValidator({ schema: updateFundSchema, key: 'body' }),
   patchFundHandler,
 )
 
 router.delete('/:id',
-payloadValidator({ schema: fundIDSchema, key: 'params'}),
+payloadValidator({ schema: alterFundSchema, key: 'params'}),
 deleteFundHandler,
 );
 

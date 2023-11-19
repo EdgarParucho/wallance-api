@@ -7,12 +7,7 @@ const morgan = require('morgan');
 const routerAPI = require('./src/routes');
 const config = require('./src/config')
 const db = require('./src/dataAccess/sequelize');
-const {
-  logError,
-  errorHandler,
-  boomErrorHandler,
-  ORMErrorHandler
-} = require('./src/middleware/errorHandler')
+const { logError, errorHandler, boomErrorHandler, ORMErrorHandler } = require('./src/middleware/errorHandler')
 
 db.authenticate()
 
@@ -24,7 +19,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-require('./src/utils/auth');
+require('./src/thirdParty/passport');
 routerAPI(app);
 
 if (config.env === 'dev') app.use(logError);
