@@ -1,8 +1,10 @@
 const boom = require('@hapi/boom');
+const jwt = require('jsonwebtoken');
 const { v1: uuidv1 } = require('uuid');
 
 const { models } = require('../dataAccess/sequelize');
 const mailOTP = require('../utils/email/mailOTP');
+const config = require('../config/index.js');
 
 class AuthService {
 
@@ -31,12 +33,26 @@ class AuthService {
     return
   }
 
-  async sendOTP(sub, { email, emailShouldBeStored }) {
+  async sendOTP({ email, emailShouldBeStored }) {
     await this.validateEmailInDB({ email, emailShouldBeStored });
-    const code = this.generateOTP(sub);
+    const code = this.generateOTP(email);
     await mailOTP({ to: email, code });
     return
   }
+
+  getClientToken(payload) {
+    const signedToken = jwt.sign(payload, config.jwtSecret, { expiresIn: "1h" });
+    const { exp } = jwt.decode(signedToken, { secret: config.jwtSecret });
+    const clientToken = { token: signedToken, exp };
+    return clientToken;
+  }
+  
+  login({ id, funds, preferences, email }) {
+    const tokenPayload = { sub: id, email };
+    const clientToken = this.getClientToken(tokenPayload);
+    const data = { token: clientToken, preferences, funds };
+    return data;
+  }  
 
 }
 

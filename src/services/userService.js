@@ -1,9 +1,10 @@
 const bcrypt = require('bcrypt');
 const boom = require('@hapi/boom');
 const { models } = require('../dataAccess/sequelize');
+const AuthService = require('./authService');
 
 const { User } = models;
-
+const authService = new AuthService();
 class UserService {
 
   constructor() {}
@@ -28,7 +29,8 @@ class UserService {
     if (Object.keys(updateEntries).length > 1) throw boom.badRequest();
     if (updateEntries.password) updateEntries.password = await bcrypt.hash(updateEntries.password, 10);
     await user.update({ ...updateEntries });
-    return
+    const data = (updateEntries.email) ? authService.getClientToken({ sub: id, email: updateEntries.email }) : null;
+    return data;
   }
 
   async delete(id) {

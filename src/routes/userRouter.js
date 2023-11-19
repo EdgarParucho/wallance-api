@@ -2,9 +2,8 @@ const express = require('express');
 const passport = require('passport');
 const userController = require('../controllers/userController.js');
 const authController = require('../controllers/authController.js');
-const validatorHandler = require('../middleware/validatorHandler.js');
-const { signSchema } = require('../middleware/schemaValidation/credentialsSchema.js');
-const { updateUserSchema } = require('../middleware/schemaValidation/accountSchema.js');
+const payloadValidator = require('../middleware/payloadValidator.js');
+const { createUserSchema, updateUserSchema } = require('../middleware/payloadSchemas/userSchema.js');
 
 const router = express.Router();
 
@@ -15,14 +14,14 @@ router.post('/',
 )
 
 router.patch('/',
-  validatorHandler(updateUserSchema, 'body'),
+  payloadValidator({ schema: updateUserSchema, key: 'body' }),
   validateAuthentication,
   validateOTP,
   patchUser
 );
 
 router.patch('/reset',
-  validatorHandler(signSchema, 'body'),
+  payloadValidator({ schema: createUserSchema, key: 'body' }),
   validateOTP,
   resetPasswordHandler,
 );
