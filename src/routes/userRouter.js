@@ -1,9 +1,11 @@
 const express = require('express');
 const passport = require('passport');
+const response = require('../middleware/responseHandler.js');
+const payloadValidator = require('../middleware/payloadValidator.js');
 const userController = require('../controllers/userController.js');
 const authController = require('../controllers/authController.js');
-const payloadValidator = require('../middleware/payloadValidator.js');
 const { createUserSchema, updateUserSchema } = require('../thirdParty/joi/userSchema.js');
+const { onSignin, onAccountDelete, onAccountUpdate, onPasswordReset } = require('../utils/responseMessages.js');
 
 const router = express.Router();
 
@@ -49,28 +51,28 @@ function OTPValidator(req, res, next) {
 function createUser(req, res, next) {
   const payload = req.body;
   userController.createUser(payload)
-    .then((data) => res.status(201).send(data))
+    .then(() => response.success(res, { message: onSignin, statusCode: 201 }))
     .catch((error) => next(error))
 }
 
 function patchUserHandler(req, res, next) {
   const payload = { updateEntries: req.body, id: req.user.sub };
   userController.patchUser(payload)
-    .then((data) => res.status(200).json(data))
+    .then((data) => response.success(res, { data, message: onAccountUpdate }))
     .catch((error) => next(error))
 }
 
 function deleteUserHandler(req, res, next) {
   const payload = req.user.sub;
   userController.deleteUser(payload)
-    .then((data) => res.json(data))
+    .then(() => response.success(res, { message: onAccountDelete }))
     .catch((error) => next(error))
 }
 
 function resetPasswordHandler(req, res, next) {
   const payload = { email: req.body.email, password: req.body.password };
   userController.resetPassword(payload)
-    .then((data) => res.json(data))
+    .then(() => response.success(res, { message: onPasswordReset }))
     .catch((error) => next(error))
 }
 
