@@ -1,9 +1,10 @@
 const express = require('express');
 const passport = require('passport');
-
-const authController = require('../controllers/authController.js');
+const response = require('../middleware/responseHandler.js');
 const payloadValidator = require('../middleware/payloadValidator.js');
+const authController = require('../controllers/authController.js');
 const { OTPRequestSchema, loginSchema } = require('../thirdParty/joi/authSchema.js');
+const { onOTPSending, onLogin } = require('../utils/responseMessages.js');
 
 const router = express.Router();
 
@@ -26,18 +27,17 @@ function authenticator(req, res, next) {
 function OTPCreationHandler(req, res, next) {
   const payload = {
     email: req.body.email || req.user.email,
-    emailShouldBeStored: req.body.emailShouldBeStored
+    emailShouldBeStored: req.body.emailShouldBeStored,
   };
   authController.sendOTP(payload)
-    .then(() => res.send('A code was sent to the provided email. Please use it to complete the action.'))
+    .then(() => response.success(res, { message: onOTPSending }))
     .catch((error) => next(error))
 }
 
 function loginHandler(req, res, next) {
   const payload = { ...req.user };
   authController.login(payload)
-    .then((data) => {
-      res.json(data)})
+    .then((data) => response.success(res, { data, message: onLogin }))
     .catch((error) => next(error));
 }
 

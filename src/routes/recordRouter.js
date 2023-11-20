@@ -1,7 +1,9 @@
 const express = require('express');
-const recordController = require('../controllers/recordController');
+const response = require('../middleware/responseHandler.js');
 const payloadValidator = require('../middleware/payloadValidator');
+const recordController = require('../controllers/recordController');
 const { createRecordSchema, updateRecordSchema, alterRecordSchema } = require('../thirdParty/joi/recordSchema');
+const { onRecordCreated, onRecordsFound, onNoRecordsFound, onRecordUpdated, onRecordDeleted } = require('../utils/responseMessages.js');
 
 const router = express.Router();
 
@@ -26,28 +28,28 @@ deleteRecordHandler
 function createRecordHandler(req, res, next) {
   const body = { ...req.body, userID: req.user.sub };
   recordController.createRecord(body)
-    .then((data) => res.status(201).json(data))
+    .then((data) => response.success(res, { data, message: onRecordCreated, statusCode: 201 }))
     .catch((error) => next(error))
 }
 
 function getRecordsHandler(req, res, next) {
   const payload = { ...req.query, userID: req.user.sub };
   recordController.getRecords(payload)
-    .then((data) => res.status(200).json(data))
+    .then((data) => response.success(res, { data, message: (data.length > 0) ? onRecordsFound : onNoRecordsFound }))
     .catch((error) => next(error))
 }
 
 function patchRecordHandler(req, res, next) {
   const payload = { id: req.params.id, updateEntries: req.body, userID: req.user.sub };
   recordController.patchRecord(payload)
-    .then((data) => res.json(data))
+    .then((data) => response.success(res, { data, message: onRecordUpdated }))
     .catch((error) => next(error))
 }
 
 function deleteRecordHandler(req, res, next) {
   const payload = { id: req.params.id, userID: req.user.sub };
   recordController.deleteRecord(payload)
-    .then((data) => res.json(data))
+    .then((data) => response.success(res, { data, message: onRecordDeleted }))
     .catch((error) => next(error))
 }
 

@@ -5,11 +5,8 @@ const cors = require('cors');
 const morgan = require('morgan');
 
 const routerAPI = require('./src/routes');
-const config = require('./src/config')
-const db = require('./src/dataAccess/sequelize');
-const { logError, errorHandler, boomErrorHandler, ORMErrorHandler } = require('./src/middleware/errorHandler')
-
-db.authenticate()
+const config = require('./src/config');
+const { logError, errorHandler, boomErrorHandler, ORMErrorHandler } = require('./src/middleware/errorHandler');
 
 const app = express();
 const port = process.env.PORT || 3000;
