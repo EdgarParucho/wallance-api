@@ -1,73 +1,52 @@
-const boom = require('@hapi/boom');
 const { Op } = require('sequelize');
-
 const sequelize = require('../dataAccess/sequelize');
-const { models } = require('../dataAccess/sequelize');
+const CustomError = require('../utils/customError.js');
+const normalizeQuery = require('../utils/normalizeQuery.js');
+
+const { Fund, Record } = sequelize.models;
 
 class RecordService {
 
   constructor() {}
 
   async find(filters) {
-    this.normalizeQueryFilters(filters);
-    const data = await models.Record.findAll({
+    normalizeQuery(filters);
+    const data = await Record.findAll({
       where: filters,
       attributes: { exclude: ['createdAt', 'updatedAt', 'userID'] },
-      raw: true
+      raw: true,
     });
     return data;
   };
 
-  normalizeQueryFilters(filters) {
-    if (filters.fromDate !== undefined && filters.toDate !== undefined) {
-      filters.date = { [Op.between]: [new Date(filters.fromDate), new Date(filters.toDate)] }
-      delete filters.fromDate;
-      delete filters.toDate;
-    } else if (filters.fromDate !== undefined) {
-      filters.date = { [Op.gte ]: new Date(filters.fromDate) }
-      delete filters.fromDate;
-    } else if (filters.toDate !== undefined) {
-      filters.date = { [Op.lte ]: new Date(filters.toDate) }
-      delete filters.toDate;
-    }
-    if (filters.note !== undefined) filters.note = { [Op.like]: "%" + filters.note + "%" };
-    if (filters.fundID !== undefined) {
-      filters[Op.or] = [{ fundID: filters.fundID }, { otherFundID: filters.fundID }]
-      delete filters.fundID;
-    }
-  }
-
   async validateDateAvailability({ date, userID, id = null }) {
     const filters = { date, userID };
     if (id) filters.id = { [Op.not]: id };
-    const recordsOnDate = await models.Record.count({ where: filters });
-    if (recordsOnDate > 0) throw boom.conflict(
-      "You have a record at the same date-time combination. Please pick a different to avoid inconsistencies."
-    )
-    else return
+    const recordsOnDate = await Record.count({ where: filters });
+    if (recordsOnDate > 0) throw new CustomError(409, "You have a record at the same date-time. Please pick another to avoid inconsistencies.");
+    else return;
   };
 
   async validateFund({ id, userID }) {
-    const fund = await models.Fund.findByPk(id);
-    if (fund === null) throw boom.notFound("Could not find the requested Fund.")
-    if (fund.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action.")
+    const fund = await Fund.findByPk(id);
+    if (fund === null) throw new CustomError(404, "The requested fund wasn't found.");
+    if (fund.dataValues.userID !== userID) throw new CustomError(403, "User is not authorized for this action.");
     return fund;
   };
 
   async getFundRecords({ fundID, excludingRecordID, transaction = null }) {
     const filters = {
       [Op.or]: [
-        { fundID }, { otherFundID: fundID }
+        { fundID },
+        { otherFundID: fundID }
       ],
     };
 
     if (excludingRecordID) filters.id = { [Op.ne]: excludingRecordID };
 
-    const fundRecords = await models.Record.findAll({
+    const fundRecords = await Record.findAll({
       where: filters,
-      order: [
-        ["date", "DESC"]
-      ],
+      order: [["date", "DESC"]],
       attributes: ["id", "fundID", "date", "amount", "otherFundID"],
       raw: true,
       transaction
@@ -86,7 +65,7 @@ class RecordService {
       const recordAmount = (record.fundID === fundID) ? Number(record.amount) : -Number(record.amount);
       const resultingBalance = (accumulatedBalance + recordAmount);
 
-      if (resultingBalance < 0) throw boom.conflict('The provided data would cause inconsistencies.' +
+      if (resultingBalance < 0) throw new CustomError(409, "The provided data would cause inconsistencies." +
       `\nOn: ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(record.date)}, `+
       `fund's balance would be: ${Number(accumulatedBalance).toFixed(2) } to cover the record's amount: ${Number(record.amount).toFixed(2)}.`
       );
@@ -94,7 +73,7 @@ class RecordService {
       return resultingBalance;
     }, 0);
 
-    const updatedFund = models.Fund.update({ balance: fundBalance}, { where: { id: fundID, userID }, transaction, returning: true, plain: true })
+    const updatedFund = Fund.update({ balance: fundBalance}, { where: { id: fundID, userID }, transaction, returning: true, plain: true })
       .then(result => {
         const raw = result[1].dataValues;
         delete raw.userID
@@ -104,9 +83,9 @@ class RecordService {
   };
 
   async findRecord({ id, userID }) {
-    const record = await models.Record.findByPk(id);
-    if (record === null) throw boom.notFound("Record not found.");
-    if (record.dataValues.userID !== userID) throw boom.unauthorized("User is not authorized for this action.");
+    const record = await Record.findByPk(id);
+    if (record === null) throw new CustomError(404, "Couldn't find the requested record.");
+    if (record.dataValues.userID !== userID) throw new CustomError(403, "User is not authorized for this action.");
     return record;
   };
 
@@ -117,7 +96,7 @@ class RecordService {
 
     await this.validateDateAvailability({ date: body.date, userID: body.userID });
     const fund = await this.validateFund({ id: body.fundID, userID: body.userID });
-    if (body.type === 1 && !fund.dataValues.isDefault) throw boom.conflict("Credits must be saved in default fund");
+    if (body.type === 1 && !fund.dataValues.isDefault) throw new CustomError(409, "Credits must be saved in default fund.");
     if (body.type === 0) await this.validateFund({
       id: body.otherFundID,
       userID: body.userID
@@ -136,7 +115,7 @@ class RecordService {
         userID: body.userID
       }, { includingRecord: body, transaction }));
 
-      const record = await models.Record.create(body, { transaction, returning: true, plain: true })
+      const record = await Record.create(body, { transaction, returning: true, plain: true })
         .then(result => {
           const raw = result.dataValues;
           delete raw.userID
@@ -157,9 +136,7 @@ class RecordService {
     if (expectedRecord.type !== 1 && expectedRecord.amount > 0) updateEntries.amount = -updateEntries.amount;
     else if (expectedRecord.type === 1 && expectedRecord.amount < 0) updateEntries.amount = -updateEntries.amount;
 
-    if (expectedRecord.fundID === expectedRecord.otherFundID) throw boom.conflict(
-      "Assignment funds (source and target) can't be equal."
-    );
+    if (expectedRecord.fundID === expectedRecord.otherFundID) throw new CustomError(409, "Assignment funds (source and target) can't be equal.");
 
     if (updateEntries.date !== undefined) {
       updateEntries.date = new Date(updateEntries.date);
@@ -170,7 +147,7 @@ class RecordService {
       .keys(updateEntries)
       .filter((key) => record.dataValues[key] !== updateEntries[key])
 
-    if (updateKeys.length === 0) throw boom.badRequest("The provided values don't represent any change to originals.");
+    if (updateKeys.length === 0) throw new CustomError(400, "The provided values don't represent any change to originals.");
     if (updateEntries.date !== undefined) await this.validateDateAvailability({ date: updateEntries.date, userID, id });
 
     const sensitiveKeys = ["fundID", "otherFundID", "date", "type", "amount"];
@@ -211,9 +188,9 @@ class RecordService {
 
       const updatedRecord = await record.update(updateEntries, { transaction, returning: true, plain: true })
         .then(result => {
-          const raw = result.dataValues;
-          delete raw.userID
-          return raw;
+          const resultData = result.dataValues;
+          delete resultData.userID
+          return resultData;
         });
 
       return { record: updatedRecord, funds: updatedFunds };
