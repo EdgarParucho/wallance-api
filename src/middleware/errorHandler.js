@@ -1,33 +1,46 @@
-const { ValidationError } = require('sequelize');
-
-function logError(err, req, res, next) {
+function errorLogger(err, req, res, next) {
   console.log(err);
-  if (err.errors !== undefined) next(err.errors[0]);
-  else next(err)
+  next(err)
 }
 
-function boomErrorHandler(err, req, res, next) {
-  if (err.isBoom) {
-    const { output } = err;
-    res.status(output.statusCode).send(output.payload.message);
-  }
-  else next(err)
+function validateConnectionError(err) {
+  const { ConnectionError, ConnectionTimedOutError, ConnectionRefusedError } = require('sequelize');
+  const connectionErrors = [ConnectionError, ConnectionTimedOutError, ConnectionRefusedError];
+  return connectionErrors.some(connectionError => err instanceof connectionError);
 }
 
-function ORMErrorHandler(err, req, res, next) {
-  if (err instanceof ValidationError) {
-    res.status(409).json({
-      statusCode: 409,
-      message: err.message,
-      errors: err.errors
-    })
-  }
+function connectionErrorHandler(err, req, res, next) {
+  const connectionError = validateConnectionError(err);
+  if (connectionError) next({
+    statusCode: 503,
+    message: "Service is temporarily unavailable.",
+    data: null,
+  })
   else next(err);
 }
 
-function errorHandler(err, req, res, next) {
-  const message = err.message || err.name;
-  res.status(500).send(message)
+function ORMErrorHandler(err, req, res, next) {
+  const { ValidationError } = require('sequelize');
+  if (err instanceof ValidationError) next({
+    statusCode: 409,
+    message: err.message,
+    data: null,
+  })
+  else next(err);
 }
 
-module.exports = { logError, boomErrorHandler, errorHandler, ORMErrorHandler };
+function errorResponseHandler(err, req, res, next) {
+  const { statusCode, message, data } = err;
+  res.status(statusCode || 500).json({
+    statusCode: statusCode || 500,
+    message: message || "Internal server error.",
+    data: null,
+  })
+}
+
+module.exports = {
+  errorLogger,
+  connectionErrorHandler,
+  ORMErrorHandler,
+  errorResponseHandler,
+};

@@ -1,26 +1,25 @@
 const bcrypt = require('bcrypt');
-const boom = require('@hapi/boom');
 const { Strategy } = require('passport-local');
-
 const { models } = require('../../../dataAccess/sequelize');
 
-const unauthorizedMsg = "The email-password combination is not valid to log you in.";
+const responseOnInvalidAuth = {
+  statusCode: 401,
+  message: "Email-Password combination is not valid.",
+  data: null
+};
 
 const LocalStrategy = new Strategy(
   { usernameField: 'email' },
-  async (providedEmail, providedPassword, done) => {
+  async (email, password, done) => {
     try {
       const userStored = await models.User.findOne({
-        where: { email: providedEmail },
-        include: [{
-          association: "funds",
-          attributes: { exclude: "userID" }
-        }]
+        where: { email },
+        include: [{ association: "funds", attributes: { exclude: "userID" } }],
       });
-      if (userStored === null) return done(boom.unauthorized(unauthorizedMsg), false);
 
-      const passwordMatch = await bcrypt.compare(providedPassword, userStored.dataValues.password)
-      if (!passwordMatch) return done(boom.unauthorized(unauthorizedMsg), false);
+      if (!userStored) return done(responseOnInvalidAuth, null);
+      const passwordMatch = await bcrypt.compare(password, userStored.dataValues.password)
+      if (!passwordMatch) return done(responseOnInvalidAuth, null);
 
       return done(null, {
         id: userStored.dataValues.id,
@@ -29,7 +28,7 @@ const LocalStrategy = new Strategy(
         funds: userStored.dataValues.funds,
       })
     } catch (error) {
-      done(error, false);
+      done(error, null);
     }
   }
 );

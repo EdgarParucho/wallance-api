@@ -1,9 +1,9 @@
-const { Model, DataTypes, Sequelize } = require('sequelize');
+const { Sequelize, Model, DataTypes } = require('sequelize');
 
-const boom = require('@hapi/boom');
 const { USER_TABLE } = require('./userModel');
 const { FUND_TABLE } = require('./fundModel');
 const RECORD_TABLE = 'records';
+const CustomError = require('../utils/customError');
 
 const recordSchema = {
   id: {
@@ -36,7 +36,7 @@ const recordSchema = {
     references: { model: FUND_TABLE, key: "id" },
     validate: {
       requiredInAssignments: (value) => {
-        if (this.type === 0 && value === null) throw boom.conflict("Both funds must be specified for assignments.")
+        if (this.type === 0 && value === null) throw new CustomError(409, "Both funds must be specified for assignments.")
       },
     }
   },
@@ -46,7 +46,7 @@ const recordSchema = {
     validate: {
       notFutureDates: (date) => {
         const today = new Date();
-        if (date > today) throw boom.conflict('Records in future date are not allowed.')
+        if (date > today) throw new CustomError(409, "Records in future date are not allowed.")
       }
     },
     required: true,
@@ -65,8 +65,8 @@ const recordSchema = {
     type: DataTypes.FLOAT,
     validate: {
       isConsistentToType(value) {
-        if (this.type === 1 && value < 0) throw boom.conflict("Amount must be positive on credits.")
-        else if (this.type === 2 && value > 0) throw boom.conflict("Amount must be negative on debits.")
+        if (this.type === 1 && value < 0) throw new CustomError(409, "Amount must be positive on credits.")
+        else if (this.type === 2 && value > 0) throw new CustomError(409, "Amount must be negative on debits.")
       }
     },
     required: true,

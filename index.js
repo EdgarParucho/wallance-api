@@ -3,10 +3,8 @@ if (process.env.NODE_ENV == 'development') require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-
 const routerAPI = require('./src/routes');
-const config = require('./src/config');
-const { logError, errorHandler, boomErrorHandler, ORMErrorHandler } = require('./src/middleware/errorHandler');
+const { errorLogger, connectionErrorHandler, ORMErrorHandler, errorResponseHandler } = require('./src/middleware/errorHandler');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -19,9 +17,9 @@ app.use(express.urlencoded({ extended: true }));
 require('./src/thirdParty/passport');
 routerAPI(app);
 
-if (config.env === 'dev') app.use(logError);
-app.use(boomErrorHandler);
+app.use(errorLogger);
+app.use(connectionErrorHandler);
 app.use(ORMErrorHandler);
-app.use(errorHandler);
+app.use(errorResponseHandler);
 
 app.listen(port, () => console.log(`Running on port ${port}`));
