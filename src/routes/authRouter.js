@@ -31,7 +31,7 @@ function loginHandler(req, res, next) {
   authController.login(payload)
     .then((data) => res.status(200).json({
       data,
-      message: "Good to have you. Get the most of your session.",
+      message: "It's great that you're here.",
     }))
     .catch((error) => next(error));
 }

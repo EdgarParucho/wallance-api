@@ -16,11 +16,11 @@ class FundService {
     return data;
   };
 
-  async update({ userID, id, body }) {
+  async update({ userID, id, updateEntries }) {
     const fund = await Fund.findByPk(id);
     if (fund === null) throw new CustomError(404, "The requested fund wasn't found.");
     if (fund.userID !== userID) throw new CustomError(403, "User is not authorized for this action.");
-    const data = await fund.update(body);
+    const data = await fund.update(updateEntries);
     delete data.dataValues.userID;
     return data;
   };

@@ -29,7 +29,6 @@ class AuthService {
 
   async validateEmailInDB({ email, emailShouldBeStored }) {
     const emailStored = await User.findOne({ where: { email } });
-    console.log(emailStored);
     if (!emailShouldBeStored && emailStored) throw new CustomError(409, "The email is already associated to an account.");
     else if (emailShouldBeStored && !emailStored) throw new CustomError(409, "Could not found the provided email.");
     else return
