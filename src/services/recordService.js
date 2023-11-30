@@ -15,6 +15,7 @@ class RecordService {
       where: filters,
       attributes: { exclude: ['createdAt', 'updatedAt', 'userID'] },
       raw: true,
+      order: [['date', 'DESC']]
     });
     return data;
   };
