@@ -2,14 +2,14 @@ const { Op } = require('sequelize');
 
 module.exports = function normalizeQueryFilters(filters) {
   if (filters.fromDate !== undefined && filters.toDate !== undefined) {
-    filters.date = { [Op.between]: [new Date(filters.fromDate), new Date(filters.toDate)] }
+    filters.date = { [Op.between]: [filters.fromDate, filters.toDate] }
     delete filters.fromDate;
     delete filters.toDate;
   } else if (filters.fromDate !== undefined) {
-    filters.date = { [Op.gte ]: new Date(filters.fromDate) }
+    filters.date = { [Op.gte ]: filters.fromDate }
     delete filters.fromDate;
   } else if (filters.toDate !== undefined) {
-    filters.date = { [Op.lte ]: new Date(filters.toDate) }
+    filters.date = { [Op.lte ]: filters.toDate }
     delete filters.toDate;
   }
   if (filters.note !== undefined) filters.note = { [Op.like]: "%" + filters.note + "%" };
