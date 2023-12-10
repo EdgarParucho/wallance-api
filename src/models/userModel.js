@@ -14,16 +14,10 @@ const userSchema = {
     allowNull: false,
     type: DataTypes.STRING,
     unique: true,
-    validate: {
-      isEmail: true,
-    },
   },
   password: {
     allowNull: false,
     type: DataTypes.STRING,
-    validate: {
-      len: [8]
-    }
   },
   preferences: {
     type: DataTypes.JSONB,

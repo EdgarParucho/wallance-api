@@ -2,12 +2,12 @@ const Joi = require('joi');
 
 const id = Joi.string().uuid();
 const amount = Joi.number();
-const date = Joi.date();
+const date = Joi.date().less('now');
 const note = Joi.string().allow("");
 const tag = Joi.string().allow("");
 const fundID = id;
 const otherFundID = id.allow(null, "");
-const type = Joi.number();
+const type = Joi.number().min(0).max(2);
 
 const createRecordSchema = Joi.object({
   amount: amount.required(),
