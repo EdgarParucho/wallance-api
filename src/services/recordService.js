@@ -20,18 +20,17 @@ class RecordService {
     return data;
   };
 
-  async validateDateAvailability({ date, userID, id = null }) {
+  async validateDateAvailability({ date, userID, updatingID = null }) {
     const filters = { date, userID };
-    if (id) filters.id = { [Op.not]: id };
+    if (updatingID) filters.id = { [Op.not]: updatingID };
     const recordsOnDate = await Record.count({ where: filters });
     if (recordsOnDate > 0) throw new CustomError(409, "You have a record at the same date-time. Please pick another to avoid inconsistencies.");
     else return;
   };
 
   async validateFund({ id, userID }) {
-    const fund = await Fund.findByPk(id);
+    const fund = await Fund.findOne({ where: { id, userID } });
     if (fund === null) throw new CustomError(404, "The requested fund wasn't found.");
-    if (fund.dataValues.userID !== userID) throw new CustomError(403, "User is not authorized for this action.");
     return fund;
   };
 
@@ -84,9 +83,8 @@ class RecordService {
   };
 
   async findRecord({ id, userID }) {
-    const record = await Record.findByPk(id);
+    const record = await Record.findOne({ where: { id, userID } });
     if (record === null) throw new CustomError(404, "Couldn't find the requested record.");
-    if (record.dataValues.userID !== userID) throw new CustomError(403, "User is not authorized for this action.");
     return record;
   };
 
@@ -136,8 +134,6 @@ class RecordService {
 
     if (expectedRecord.type !== 1 && expectedRecord.amount > 0) updateEntries.amount = -updateEntries.amount;
     else if (expectedRecord.type === 1 && expectedRecord.amount < 0) updateEntries.amount = -updateEntries.amount;
-
-    if (expectedRecord.fundID === expectedRecord.otherFundID) throw new CustomError(409, "Assignment funds (source and target) can't be equal.");
 
     if (updateEntries.date !== undefined) {
       updateEntries.date = new Date(updateEntries.date);

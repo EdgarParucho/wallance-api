@@ -17,25 +17,22 @@ class FundService {
   };
 
   async update({ userID, id, updateEntries }) {
-    const fund = await Fund.findByPk(id);
+    const fund = await Fund.findOne({ where: { id, userID } });
     if (fund === null) throw new CustomError(404, "The requested fund wasn't found.");
-    if (fund.userID !== userID) throw new CustomError(403, "User is not authorized for this action.");
     const data = await fund.update(updateEntries);
     delete data.dataValues.userID;
     return data;
   };
 
-  preDeleteValidations(fund, userID) {
-    if (fund === null) throw new CustomError(404, "The requested fund wasn't found.");
-    if (fund.userID !== userID) throw new CustomError(403, "User is not authorized for this action.");
-    if (fund.dataValues.isDefault) throw new CustomError(409, "Cannot delete the default fund.");
-    if (fund.balance > 0) throw new CustomError(409, "Cannot delete a fund with positive balance.");
-  }
-
   async delete({ userID, id }) {
     const data = await sequelize.transaction(async (transaction) => {
-      const fund = await Fund.findByPk(id, { transaction });
-      this.preDeleteValidations(fund, userID);
+
+      const fund = await Fund.findOne({ where: { id, userID }, }, { transaction });
+
+      if (fund === null) throw new CustomError(404, "The requested fund wasn't found.");
+      if (fund.dataValues.isDefault) throw new CustomError(409, "Cannot delete the default fund.");
+      if (fund.balance > 0) throw new CustomError(409, "Cannot delete a fund with positive balance.");
+
       const defaultFund = await Fund.findOne({ where: { userID, isDefault: true }, raw: true, transaction })
 
       await Record.destroy({

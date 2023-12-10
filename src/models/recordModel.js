@@ -38,27 +38,19 @@ const recordSchema = {
       requiredInAssignments: (value) => {
         if (this.type === 0 && value === null) throw new CustomError(409, "Both funds must be specified for assignments.")
       },
+      differsFromFundID: (value) => {
+        if (value === this.fundID) throw new CustomError(409, "Source and target funds can't be equal.");
+      }
     }
   },
   date: {
     allowNull: false,
     type: DataTypes.DATE,
-    validate: {
-      notFutureDates: (date) => {
-        const today = new Date();
-        if (date > today) throw new CustomError(409, "Records in future date are not allowed.")
-      }
-    },
     required: true,
   },
   type: {
     allowNull: false,
     type: DataTypes.INTEGER,
-    validate: {
-      isIn: [
-        [0, 1, 2]
-      ]
-    }
   },
   amount: {
     allowNull: false,
@@ -66,7 +58,7 @@ const recordSchema = {
     validate: {
       isConsistentToType(value) {
         if (this.type === 1 && value < 0) throw new CustomError(409, "Amount must be positive on credits.")
-        else if (this.type === 2 && value > 0) throw new CustomError(409, "Amount must be negative on debits.")
+        else if (this.type !== 1 && value > 0) throw new CustomError(409, "Amount must be negative on debits.")
       }
     },
     required: true,

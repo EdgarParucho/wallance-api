@@ -6,7 +6,6 @@ module.exports = function normalizeQueryFilters(filters) {
   else if (filters.toDate !== undefined) setDateTo(filters);
   if (filters.note !== undefined) useLikeOperator(filters);
   if (filters.fundID !== undefined) setBothFundsFilter(filters);
-  console.log(filters);
 }
 
 function setDateRange(filters) {
