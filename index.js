@@ -23,3 +23,4 @@ app.use(ORMErrorHandler);
 app.use(errorResponseHandler);
 
 app.listen(port, () => console.log(`Running on port ${port}`));
+module.exports = app;
