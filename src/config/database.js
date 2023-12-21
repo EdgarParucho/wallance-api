@@ -1,8 +1,6 @@
 const config = require('.');
 
-const USER = encodeURIComponent(config.dbUser);
-const PASSWORD = encodeURIComponent(config.dbPassword);
-const URI = `postgresql://${USER}:${PASSWORD}@${config.dbHost}:${config.dbPort}/${config.dbName}`;
+const URI = config.dbURL;
 
 module.exports = {
   url: URI,

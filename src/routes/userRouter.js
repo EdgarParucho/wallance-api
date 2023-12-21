@@ -1,9 +1,9 @@
 const express = require('express');
-const passport = require('passport');
 const payloadValidator = require('../middleware/payloadValidator.js');
 const userController = require('../controllers/userController.js');
 const authController = require('../controllers/authController.js');
 const { createUserSchema, updateUserSchema } = require('../thirdParty/joi/userSchema.js');
+const { checkJWT, checkScopes } = require('../middleware/checkAuthorization.js');
 
 const router = express.Router();
 
@@ -15,7 +15,8 @@ router.post('/',
 
 router.patch('/',
   payloadValidator({ schema: updateUserSchema, key: 'body' }),
-  tokenValidator,
+  checkJWT,
+  checkScopes,
   OTPValidator,
   patchUserHandler,
 );
@@ -27,14 +28,11 @@ router.patch('/reset',
 );
 
 router.delete('/',
-  tokenValidator,
+  checkJWT,
+  checkScopes,
   OTPValidator,
   deleteUserHandler,
 );
-
-function tokenValidator(req, res, next) {
-  passport.authenticate('jwt', { session: false })(req, res, next)
-}
 
 function OTPValidator(req, res, next) {
   if (req.body.preferences && !req.body.email && !req.body.password) return next()

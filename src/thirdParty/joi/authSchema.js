@@ -7,7 +7,6 @@ const OTPRequestSchema = Joi.object({
 
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
-  password: Joi.string().length(8).required()
 });
 
 module.exports = { loginSchema, OTPRequestSchema };

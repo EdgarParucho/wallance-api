@@ -14,7 +14,6 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-require('./src/thirdParty/passport');
 routerAPI(app);
 
 app.use(errorLogger);

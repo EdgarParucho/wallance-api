@@ -1,6 +1,4 @@
-const jwt = require('jsonwebtoken');
 const { v1: OTP } = require('uuid');
-const { jwtSecret } = require('../config/index.js');
 const { models } = require('../dataAccess/sequelize');
 const mailOTP = require('../utils/mailOTP');
 const CustomError = require('../utils/customError.js');
@@ -13,11 +11,27 @@ class AuthService {
     this.activeOTP = { sub: null, code: null };
   }
 
-  login({ id, funds, preferences, email }) {
-    const tokenPayload = { sub: id, email };
-    const clientToken = this.createClientToken(tokenPayload);
-    const data = { token: clientToken, preferences, funds };
-    return data;
+  async login({ email }) {
+    try {
+      const userStored = await User.findOne({
+        where: { email },
+        include: [{ association: "funds", attributes: { exclude: ["userID", "password"] } }],
+      });
+
+      if (!userStored) throw new CustomError({
+        statusCode: 404,
+        message: "User's data couldn't be found with the provided email.",
+        data: null
+      });
+
+      return userStored.dataValues;
+    } catch (error) {
+      throw new CustomError({
+        statusCode: 500,
+        message: error.message || "Internal Server Error",
+        data: null
+      });
+    }
   }
 
   async sendOTP({ email, emailShouldBeStored }) {
@@ -45,13 +59,6 @@ class AuthService {
     const OTPIsValid = (this.activeOTP.code === code && this.activeOTP.sub === sub);
     if (!OTPIsValid) throw new CustomError(401, "The provided code is invalid.");
     else return
-  }
-
-  createClientToken(payload) {
-    const signedToken = jwt.sign(payload, jwtSecret, { expiresIn: "1h" });
-    const { exp } = jwt.decode(signedToken, { secret: jwtSecret });
-    const clientToken = { token: signedToken, exp };
-    return clientToken;
   }
 
 }
