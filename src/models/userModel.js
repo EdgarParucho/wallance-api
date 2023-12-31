@@ -7,16 +7,6 @@ const userSchema = {
     allowNull: false,
     primaryKey: true,
     unique: true,
-    type: DataTypes.UUID,
-    defaultValue: Sequelize.UUIDV4
-  },
-  email: {
-    allowNull: false,
-    type: DataTypes.STRING,
-    unique: true,
-  },
-  password: {
-    allowNull: false,
     type: DataTypes.STRING,
   },
   preferences: {

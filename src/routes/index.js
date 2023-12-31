@@ -8,8 +8,8 @@ const { checkJWT, checkScopes } = require('../middleware/checkAuthorization.js')
 function routerAPI(app) {
   const router = express.Router();
   app.use('/api', router);
-  router.use('/auth', authRouter);
-  router.use('/user', userRouter);
+  router.use('/auth', checkJWT, checkScopes, authRouter);
+  router.use('/user', checkJWT, checkScopes, userRouter);
   router.use('/funds', checkJWT, checkScopes, fundRouter);
   router.use('/records', checkJWT, checkScopes, recordRouter);
 }

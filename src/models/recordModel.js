@@ -17,7 +17,7 @@ const recordSchema = {
   userID: {
     field: 'user_id',
     allowNull: false,
-    type: DataTypes.UUID,
+    type: DataTypes.STRING,
     references: { model: USER_TABLE, key: 'id' },
     onDelete: 'CASCADE',
     required: true

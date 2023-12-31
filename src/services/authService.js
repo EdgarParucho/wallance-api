@@ -1,64 +1,35 @@
-const { v1: OTP } = require('uuid');
 const { models } = require('../dataAccess/sequelize');
-const mailOTP = require('../utils/mailOTP');
 const CustomError = require('../utils/customError.js');
 
-const { User } = models;
+const { User, Fund } = models;
 
 class AuthService {
 
-  constructor() {
-    this.activeOTP = { sub: null, code: null };
-  }
+  constructor() {}
 
-  async login({ email }) {
+  async login(id) {
     try {
-      const userStored = await User.findOne({
-        where: { email },
-        include: [{ association: "funds", attributes: { exclude: ["userID", "password"] } }],
+      const userStored = await User.findByPk(id, {
+        include: { association: "funds", attributes: { exclude: ["userID"] } },
       });
 
-      if (!userStored) throw new CustomError({
-        statusCode: 404,
-        message: "User's data couldn't be found with the provided email.",
-        data: null
-      });
+      if (userStored) return userStored.dataValues;
 
-      return userStored.dataValues;
+      const defaultFund = {
+        name: 'Main',
+        description: 'Base fund, default for credits.',
+        isDefault: true,
+        balance: 0,
+      };
+
+      const userData = { id, funds: [defaultFund] };
+      const user = await User.create(userData, { include: [{ model: Fund, as: 'funds', required: true }] });
+      delete user.dataValues.funds[0].dataValues.userID;
+      delete user.dataValues.id;
+      return { ...user.dataValues };
     } catch (error) {
-      throw new CustomError({
-        statusCode: 500,
-        message: error.message || "Internal Server Error",
-        data: null
-      });
+      throw new CustomError(500, error.message || "Internal Server Error");
     }
-  }
-
-  async sendOTP({ email, emailShouldBeStored }) {
-    await this.validateEmailInDB({ email, emailShouldBeStored });
-    const code = this.generateOTP(email);
-    await mailOTP({ to: email, code });
-    return;
-  }
-
-  async validateEmailInDB({ email, emailShouldBeStored }) {
-    const emailStored = await User.findOne({ where: { email } });
-    if (!emailShouldBeStored && emailStored) throw new CustomError(409, "The email is already associated to an account.");
-    else if (emailShouldBeStored && !emailStored) throw new CustomError(409, "Could not found the provided email.");
-    else return
-  }
-
-  generateOTP(sub) {
-    const code = OTP();
-    this.activeOTP.sub = sub;
-    this.activeOTP.code = code;
-    return code; 
-  }
-
-  validateOTP({ code, sub }) {
-    const OTPIsValid = (this.activeOTP.code === code && this.activeOTP.sub === sub);
-    if (!OTPIsValid) throw new CustomError(401, "The provided code is invalid.");
-    else return
   }
 
 }

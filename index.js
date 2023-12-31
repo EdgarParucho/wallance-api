@@ -4,7 +4,12 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const routerAPI = require('./src/routes');
-const { errorLogger, connectionErrorHandler, ORMErrorHandler, errorResponseHandler } = require('./src/middleware/errorHandler');
+const {
+  errorLogger,
+  connectionErrorHandler,
+  ORMErrorHandler,
+  errorResponseHandler
+} = require('./src/middleware/errorHandler');
 
 const app = express();
 const port = process.env.PORT || 3000;

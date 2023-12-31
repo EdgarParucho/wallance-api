@@ -7,6 +7,6 @@ const checkJWT = auth({
   tokenSigningAlg: authAlg,
 });
 
-const checkScopes = requiredScopes([authScope]);
+const checkScopes = requiredScopes(authScope);
 
 module.exports = { checkJWT, checkScopes };
