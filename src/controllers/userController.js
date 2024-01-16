@@ -1,12 +1,12 @@
 const UserService = require('../services/userService');
 const userService = new UserService();
 
-async function createUser(payload) {
-  const data = await userService.create(payload);
+async function getUser(payload) {
+  const data = userService.getUser(payload);
   return data;
 }
 
-async function patchUser(payload) {
+async function updateUser(payload) {
   const data = await userService.update(payload);
   return data;
 }
@@ -16,9 +16,4 @@ async function deleteUser(payload) {
   return data;
 }
 
-async function resetPassword(payload) {
-  const data = await userService.resetPassword(payload);
-  return data;
-}
-
-module.exports = { createUser, patchUser, deleteUser, resetPassword };
+module.exports = { getUser, updateUser, deleteUser };

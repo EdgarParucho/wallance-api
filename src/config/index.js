@@ -1,5 +1,13 @@
 const { mailHost, mailPort, mailUser, mailPass } = require('./mail');
-const { authAud, authIss, authAlg, authScope } = require('./auth');
+const {
+  authAud,
+  authIss,
+  authAlg,
+  authScope,
+  authClientID,
+  authClientSecret,
+  authGrantType,
+} = require('./auth');
 
 const config = {
   env: process.env.NODE_ENV || 'dev',
@@ -14,6 +22,9 @@ const config = {
   authAud,
   authAlg,
   authScope,
+  authClientID,
+  authClientSecret,
+  authGrantType,
 }
 
 module.exports = config;

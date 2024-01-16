@@ -9,17 +9,7 @@ const userSchema = {
     unique: true,
     type: DataTypes.STRING,
   },
-  preferences: {
-    type: DataTypes.JSONB,
-    defaultValue: {
-      darkMode: false,
-      templates: [],
-      queries: [],
-      FirstStepsStatus: ["Active", "Active", "Active"],
-      language: "en"
-    }
-  }
-}
+};
 
 class User extends Model{
   static associate(models) {
