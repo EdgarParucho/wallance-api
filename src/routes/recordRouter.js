@@ -24,8 +24,9 @@ deleteRecordHandler
 );
 
 function createRecordHandler(req, res, next) {
-  const body = { ...req.body, userID: req.user.sub };
-  recordController.createRecord(body)
+  const [provider, userID] = req.auth.payload.sub.split("|");
+  const payload = { ...req.body, userID };
+  recordController.createRecord(payload)
     .then((data) => res.status(201).json({
       data,
       message: "Record saved.",
@@ -34,7 +35,8 @@ function createRecordHandler(req, res, next) {
 }
 
 function getRecordsHandler(req, res, next) {
-  const payload = { ...req.query, userID: req.user.sub };
+  const [provider, userID] = req.auth.payload.sub.split("|");
+  const payload = { ...req.query, userID };
   recordController.getRecords(payload)
     .then((data) => res.status(200).json({
       data,
@@ -44,7 +46,8 @@ function getRecordsHandler(req, res, next) {
 }
 
 function patchRecordHandler(req, res, next) {
-  const payload = { id: req.params.id, updateEntries: req.body, userID: req.user.sub };
+  const [provider, userID] = req.auth.payload.sub.split("|");
+  const payload = { id: req.params.id, updateEntries: req.body, userID };
   recordController.patchRecord(payload)
     .then((data) => res.status(200).json({
       data,
@@ -54,7 +57,8 @@ function patchRecordHandler(req, res, next) {
 }
 
 function deleteRecordHandler(req, res, next) {
-  const payload = { id: req.params.id, userID: req.user.sub };
+  const [provider, userID] = req.auth.payload.sub.split("|");
+  const payload = { id: req.params.id, userID };
   recordController.deleteRecord(payload)
     .then((data) => res.status(200).json({
       data,

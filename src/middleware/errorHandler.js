@@ -1,5 +1,5 @@
 function errorLogger(err, req, res, next) {
-  console.log(err);
+  console.log(err.data?.message || err.message);
   next(err)
 }
 
@@ -33,7 +33,7 @@ function errorResponseHandler(err, req, res, next) {
   const { statusCode, message, data } = err;
   res.status(statusCode || 500).json({
     statusCode: statusCode || 500,
-    message: message || "Internal server error.",
+    message: err.response?.data?.message || message || "Internal server error.",
     data: null,
   })
 }

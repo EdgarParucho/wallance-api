@@ -1,10 +1,15 @@
-if (process.env.NODE_ENV == 'development') require('dotenv').config()
+if (process.env.NODE_ENV !== 'production') require('dotenv').config()
 
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const routerAPI = require('./src/routes');
-const { errorLogger, connectionErrorHandler, ORMErrorHandler, errorResponseHandler } = require('./src/middleware/errorHandler');
+const {
+  errorLogger,
+  connectionErrorHandler,
+  ORMErrorHandler,
+  errorResponseHandler
+} = require('./src/middleware/errorHandler');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -14,7 +19,6 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-require('./src/thirdParty/passport');
 routerAPI(app);
 
 app.use(errorLogger);

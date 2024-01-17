@@ -1,4 +1,4 @@
-const { Model, Sequelize, DataTypes } = require('sequelize');
+const { Model, DataTypes } = require('sequelize');
 
 const USER_TABLE = 'users';
 
@@ -7,29 +7,9 @@ const userSchema = {
     allowNull: false,
     primaryKey: true,
     unique: true,
-    type: DataTypes.UUID,
-    defaultValue: Sequelize.UUIDV4
-  },
-  email: {
-    allowNull: false,
-    type: DataTypes.STRING,
-    unique: true,
-  },
-  password: {
-    allowNull: false,
     type: DataTypes.STRING,
   },
-  preferences: {
-    type: DataTypes.JSONB,
-    defaultValue: {
-      darkMode: false,
-      templates: [],
-      queries: [],
-      FirstStepsStatus: ["Active", "Active", "Active"],
-      language: "en"
-    }
-  }
-}
+};
 
 class User extends Model{
   static associate(models) {

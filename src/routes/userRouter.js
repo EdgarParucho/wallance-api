@@ -1,87 +1,41 @@
 const express = require('express');
-const passport = require('passport');
 const payloadValidator = require('../middleware/payloadValidator.js');
 const userController = require('../controllers/userController.js');
-const authController = require('../controllers/authController.js');
-const { createUserSchema, updateUserSchema } = require('../thirdParty/joi/userSchema.js');
+const { updateUserSchema } = require('../thirdParty/joi/userSchema.js');
 
 const router = express.Router();
 
-router.post('/',
-  payloadValidator({ schema: createUserSchema, key: 'body' }),
-  OTPValidator,
-  createUser,
-)
+router.get('/', getUser);
+router.patch('/', payloadValidator({ schema: updateUserSchema, key: 'body' }), updateUser);
+router.delete('/', deleteUser);
 
-router.patch('/',
-  payloadValidator({ schema: updateUserSchema, key: 'body' }),
-  tokenValidator,
-  OTPValidator,
-  patchUserHandler,
-);
-
-router.patch('/reset',
-  payloadValidator({ schema: createUserSchema, key: 'body' }),
-  OTPValidator,
-  resetPasswordHandler,
-);
-
-router.delete('/',
-  tokenValidator,
-  OTPValidator,
-  deleteUserHandler,
-);
-
-function tokenValidator(req, res, next) {
-  passport.authenticate('jwt', { session: false })(req, res, next)
-}
-
-function OTPValidator(req, res, next) {
-  if (req.body.preferences && !req.body.email && !req.body.password) return next()
-  const OTP = req.header('OTP');
-  const email = req.body.email || req.user.email;
-  const payload = { code: OTP, sub: email };
-  authController.validateOTP(payload)
-    .then(() => next())
-    .catch((error) => next(error))
-}
-
-function createUser(req, res, next) {
-  const payload = req.body;
-  userController.createUser(payload)
-    .then((data) => res.status(201).json({
-      data,
-      message: "You account is ready.",
-    }))
-    .catch((error) => next(error))
-}
-
-function patchUserHandler(req, res, next) {
-  const payload = { updateEntries: req.body, id: req.user.sub };
-  userController.patchUser(payload)
+function getUser(req, res, next) {
+  const userID = req.auth.payload.sub;
+  userController.getUser(userID)
     .then((data) => res.status(200).json({
       data,
+      message: "It's great that you're here.",
+    }))
+    .catch((error) => next(error));
+}
+
+function updateUser(req, res, next) {
+  const userID = req.auth.payload.sub;
+  const { body } = req;
+  userController.updateUser({ userID, body })
+    .then(() => res.status(204).json({
+      data: null,
       message: "Your data has been updated.",
     }))
     .catch((error) => next(error))
 }
 
-function deleteUserHandler(req, res, next) {
-  const payload = req.user.sub;
-  userController.deleteUser(payload)
-    .then((data) => res.status(200).json({
-      data,
+function deleteUser(req, res, next) {
+  const userID = req.auth.payload.sub;
+  userController.deleteUser(userID)
+    .then(() => res.status(204).json({
+      data: null,
       message: "Your account and data has been deleted.",
-    }))
-    .catch((error) => next(error))
-}
-
-function resetPasswordHandler(req, res, next) {
-  const payload = { email: req.body.email, password: req.body.password };
-  userController.resetPassword(payload)
-    .then((data) => res.status(200).json({
-      data,
-      message: "You can now log in with the new password.",
     }))
     .catch((error) => next(error))
 }
