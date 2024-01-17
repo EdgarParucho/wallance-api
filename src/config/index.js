@@ -1,4 +1,5 @@
-const { mailHost, mailPort, mailUser, mailPass } = require('./mail');
+if (process.env.NODE_ENV !== 'production') require('dotenv').config()
+
 const {
   authAud,
   authIss,
@@ -14,10 +15,6 @@ const config = {
   port: process.env.PORT || 3000,
   dbURL: process.env.POSTGRES_URL,
   jwtSecret: process.env.JWT_SECRET,
-  mailHost,
-  mailPort,
-  mailUser,
-  mailPass,
   authIss,
   authAud,
   authAlg,

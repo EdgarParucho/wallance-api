@@ -1,8 +1,8 @@
 'use strict';
 
-const { FUND_TABLE, fundSchema } = require('../src/db/models/fundModel');
-const { RECORD_TABLE, recordSchema } = require('../src/db/models/recordModel');
-const { USER_TABLE, userSchema } = require('../src/db/models/userModel');
+const { FUND_TABLE, fundSchema } = require('../src/models/fundModel');
+const { RECORD_TABLE, recordSchema } = require('../src/models/recordModel');
+const { USER_TABLE, userSchema } = require('../src/models/userModel');
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
