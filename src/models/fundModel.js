@@ -18,9 +18,9 @@ const fundSchema = {
     references: {
       model: USER_TABLE,
       key: 'id',
-      required: true
     },
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
+    required: true
   },
 }
 
