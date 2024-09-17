@@ -22,7 +22,7 @@ deleteFundHandler,
 );
 
 function createFundHandler(req, res, next) {
-  const [provider, userID] = req.auth.payload.sub.split("|");
+  const userID = req.auth.payload.sub;
   const payload = { ...req.body, userID };
   fundController.createFund(payload)
     .then((data) => res.status(201).json({
@@ -33,7 +33,7 @@ function createFundHandler(req, res, next) {
 }
 
 function patchFundHandler(req, res, next) {
-  const [provider, userID] = req.auth.payload.sub.split("|");
+  const userID = req.auth.payload.sub;
   const payload = { updateEntries: req.body, id: req.params.id, userID };
   fundController.patchFund(payload)
     .then((data) => res.status(200).json({
@@ -44,7 +44,7 @@ function patchFundHandler(req, res, next) {
 }
 
 function deleteFundHandler(req, res, next) {
-  const [provider, userID] = req.auth.payload.sub.split("|");
+  const userID = req.auth.payload.sub;
   const payload = { id: req.params.id, userID }
   fundController.deleteFund(payload)
     .then((data) => res.status(200).json({
