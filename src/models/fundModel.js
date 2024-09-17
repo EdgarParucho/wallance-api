@@ -26,7 +26,7 @@ const fundSchema = {
 
 class Fund extends Model {
   static associate(models) {
-    this.belongsTo(models.User, { as: 'user', foreignKey: 'userID' });
+    this.belongsTo(models.User, { as: 'user', foreignKey: 'id' });
     this.hasMany(models.Record, { as: 'records', foreignKey: 'fundID' })
     this.hasMany(models.Record, { as: 'assignments', foreignKey: 'otherFundID' })
   }
