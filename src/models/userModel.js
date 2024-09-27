@@ -13,8 +13,8 @@ const userSchema = {
 
 class User extends Model{
   static associate(models) {
-    this.hasMany(models.Fund, { as: 'funds', foreignKey: 'user_id' })
-    this.hasMany(models.Record, { as: 'records', foreignKey: 'user_id' })
+    this.hasMany(models.Fund, { as: 'funds', foreignKey: 'userID' })
+    this.hasMany(models.Record, { as: 'records', foreignKey: 'userID' })
   }
   static config(sequelize) {
     return {
