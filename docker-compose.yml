@@ -3,7 +3,7 @@ version: '3.1'
 services:
 
   postgres:
-    image: postgres:13
+    image: postgres:15
     environment:
       POSTGRES_DB: wallance_dev
       POSTGRES_USER: admin

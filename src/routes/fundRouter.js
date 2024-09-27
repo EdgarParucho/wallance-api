@@ -23,8 +23,6 @@ deleteFundHandler,
 
 function createFundHandler(req, res, next) {
   const userID = req.auth.payload.sub;
-  console.log(userID);
-  
   const payload = { ...req.body, userID };
   fundController.createFund(payload)
     .then((data) => res.status(201).json({
