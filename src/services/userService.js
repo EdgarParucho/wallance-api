@@ -30,7 +30,12 @@ class UserService {
   async getUser(userID) {
     try {
       const userStored = await User.findByPk(userID, {
-        include: { association: "funds", attributes: { exclude: ["userID"] } },
+        include: {
+          association: "funds",
+          attributes: { exclude: ["userID"] },
+          separate: true,
+          order: [['name', 'ASC']]
+        },
       });
       if (userStored) return userStored.dataValues;
       else return this.createUser(userID)
