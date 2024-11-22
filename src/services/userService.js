@@ -2,11 +2,17 @@ const axios = require('../thirdParty/axios');
 const sequelize = require('../dataAccess/sequelize');
 const CustomError = require('../utils/customError.js');
 const { authIss, authClientID, authClientSecret, authGrantType } = require('../config/index.js');
+const { Op } = require('sequelize');
 
 const AUTH0_DOMAIN =  authIss;
 axios.defaults.baseURL = AUTH0_DOMAIN;
 
-const { User, Fund } = sequelize.models;
+const firstOfMonth = (month = new Date().getMonth()) => {
+  const year = new Date().getFullYear()
+  return new Date(year, month, 1)
+}
+
+const { User, Fund, Record } = sequelize.models;
 
 class UserService {
 
@@ -30,16 +36,26 @@ class UserService {
   async getUser(userID) {
     try {
       const userStored = await User.findByPk(userID, {
-        include: {
+        include: [{
           association: "funds",
           attributes: { exclude: ["userID"] },
           separate: true,
           order: [['name', 'ASC']]
         },
+        {
+          model: Record,
+          as: 'records',
+          attributes: { exclude: 'userID' },
+          where: { date: { [Op.gte]: firstOfMonth() } },
+          order: [['date', 'DESC']],
+          limit: 10,
+          required: false,
+        }],
       });
       if (userStored) return userStored.dataValues;
       else return this.createUser(userID)
     } catch (error) {
+      console.log(error);
       throw new CustomError(500, error.message || "Internal Server Error");
     }
   }
@@ -60,7 +76,7 @@ class UserService {
     delete user.dataValues.funds[0].dataValues.userID;
     delete user.dataValues.id;
 
-    return { ...user.dataValues };
+    return { ...user.dataValues, records: [] };
   }
 
   async update({ userID, body }) {
