@@ -3,7 +3,7 @@ if (process.env.NODE_ENV !== 'production') require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const routerAPI = require('./src/routes');
+const setRouter = require('./src/routes');
 const {
   errorLogger,
   connectionErrorHandler,
@@ -19,7 +19,7 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-routerAPI(app);
+setRouter(app);
 
 app.use(errorLogger);
 app.use(connectionErrorHandler);

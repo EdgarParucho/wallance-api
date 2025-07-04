@@ -15,6 +15,7 @@ const config = {
   port: process.env.PORT || 3000,
   dbURL: process.env.POSTGRES_URL,
   jwtSecret: process.env.JWT_SECRET,
+  demoUser: process.env.DEMO_USER,
   authIss,
   authAud,
   authAlg,
