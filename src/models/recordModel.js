@@ -64,17 +64,7 @@ const recordSchema = {
     required: true,
   },
   note: { type: DataTypes.STRING },
-  tag: { type: DataTypes.STRING },
-  createdAt: {
-    field: "created_at",
-    defaultValue: () => new Date(),
-    type: DataTypes.DATE
-  },
-  updatedAt: {
-    field: "updated_at",
-    defaultValue: () => new Date(),
-    type: DataTypes.DATE
-  },
+  tag: { type: DataTypes.STRING }
 }
 
 class Record extends Model {
@@ -88,7 +78,9 @@ class Record extends Model {
     return {
       sequelize,
       tableName: RECORD_TABLE,
-      modelName: 'Record'
+      modelName: 'Record',
+      createdAt: false,
+      updatedAt: false,
     }
   }
 }
