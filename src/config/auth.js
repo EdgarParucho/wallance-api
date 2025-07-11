@@ -1,17 +1,30 @@
-const authIss = process.env.AUTH0_ISSUER;
-const authAud = process.env.AUTH0_AUDIENCE;
-const authAlg = process.env.AUTH0_ALGORITHM;
-const authScope = process.env.AUTH0_SCOPE;
-const authClientSecret = process.env.AUTH0_CLIENT_SECRET;
-const authClientID = process.env.AUTH0_CLIENT_ID;
-const authGrantType = process.env.AUTH0_GRANT_TYPE;
+const { environment } = require('./server');
 
-module.exports = {
-  authIss,
-  authAud,
-  authAlg,
-  authScope,
-  authClientSecret,
-  authClientID,
-  authGrantType,
+const demoUser = process.env.DEMO_USER;
+
+const authConfig = {
+  development: {
+    authIss: process.env.AUTH0_ISSUER_DEV,
+    authAud: process.env.AUTH0_AUDIENCE_DEV,
+    authAlg: process.env.AUTH0_ALGORITHM_DEV,
+    authScope: process.env.AUTH0_SCOPE_DEV,
+    authClientSecret: process.env.AUTH0_CLIENT_SECRET_DEV,
+    authClientID: process.env.AUTH0_CLIENT_ID_DEV,
+    authGrantType: process.env.AUTH0_GRANT_TYPE_DEV,
+    jwtSecret: process.env.JWT_SECRET_DEV,
+    demoUser,
+  },
+  production: {
+    authIss: process.env.AUTH0_ISSUER,
+    authAud: process.env.AUTH0_AUDIENCE,
+    authAlg: process.env.AUTH0_ALGORITHM,
+    authScope: process.env.AUTH0_SCOPE,
+    authClientSecret: process.env.AUTH0_CLIENT_SECRET,
+    authClientID: process.env.AUTH0_CLIENT_ID,
+    authGrantType: process.env.AUTH0_GRANT_TYPE,
+    jwtSecret: process.env.JWT_SECRET,
+    demoUser,
+  },
 };
+
+module.exports = authConfig[environment];

@@ -38,9 +38,4 @@ function errorResponseHandler(err, req, res, next) {
   })
 }
 
-module.exports = {
-  errorLogger,
-  connectionErrorHandler,
-  ORMErrorHandler,
-  errorResponseHandler,
-};
+module.exports = [errorLogger, connectionErrorHandler, ORMErrorHandler, errorResponseHandler];

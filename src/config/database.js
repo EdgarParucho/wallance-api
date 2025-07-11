@@ -1,6 +1,6 @@
-const dotenv = require('dotenv');
+const { environment } = require('./server');
 
-dotenv.config();
+if (!environment) require('dotenv').config();
 
 module.exports = {
   development: {
@@ -10,6 +10,7 @@ module.exports = {
     database: process.env.DB_NAME_DEV,
     host: process.env.DB_HOST_DEV,
     port: process.env.DB_PORT_DEV,
+    dialectOptions: {}
   },
   production: {
     dialect: process.env.DB_DIALECT,
@@ -18,8 +19,6 @@ module.exports = {
     database: process.env.DB_NAME,
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
-    dialectOptions: {
-    ssl: true
-  },
+    dialectOptions: { ssl: true },
   }
 };

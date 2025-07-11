@@ -1,7 +1,7 @@
 const axios = require('../thirdParty/axios');
 const sequelize = require('../dataAccess/sequelize');
 const CustomError = require('../utils/customError.js');
-const { authIss, authClientID, authClientSecret, authGrantType } = require('../config/index.js');
+const { authIss, authClientID, authClientSecret, authGrantType } = require('../config/auth.js');
 const { Op } = require('sequelize');
 
 const AUTH0_DOMAIN =  authIss;

@@ -1,5 +1,5 @@
 const { auth, requiredScopes } = require('express-oauth2-jwt-bearer');
-const { authAud, authIss, authAlg, authScope } = require('../config');
+const { authAud, authIss, authAlg, authScope } = require('../config/auth');
 
 const checkJWT = auth({
   audience: authAud,

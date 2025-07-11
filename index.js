@@ -1,30 +1,20 @@
-if (process.env.NODE_ENV !== 'production') require('dotenv').config()
-
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
-const setRouter = require('./src/routes');
-const {
-  errorLogger,
-  connectionErrorHandler,
-  ORMErrorHandler,
-  errorResponseHandler
-} = require('./src/middleware/errorHandler');
+
+const { environment, port } = require('./src/config/server');
+const { router } = require('./src/routes');
+const errorHandler = require('./src/middleware/errorHandler');
 
 const app = express();
-const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(router);
+app.use(errorHandler);
 
-setRouter(app);
+app.listen(port, () => environment === 'production' ? {} : console.log(`Running on port ${port}`));
 
-app.use(errorLogger);
-app.use(connectionErrorHandler);
-app.use(ORMErrorHandler);
-app.use(errorResponseHandler);
-
-app.listen(port, () => console.log(`Running on port ${port}`));
 module.exports = app;
