@@ -65,9 +65,9 @@ class RecordService {
       const recordAmount = (record.fundID === fundID) ? Number(record.amount) : -Number(record.amount);
       const resultingBalance = (accumulatedBalance + recordAmount);
 
-      if (resultingBalance < 0) throw new CustomError(409, "The provided data would cause inconsistencies." +
-      `\nOn: ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(record.date)}, `+
-      `fund's balance would be: ${Number(accumulatedBalance).toFixed(2) } to cover the record's amount: ${Number(record.amount).toFixed(2)}.`
+      if (resultingBalance < 0) throw new CustomError(409, "The record would cause inconsistencies." +
+      `\nOn ${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(record.date)}, `+
+      `fund's balance (${Number(accumulatedBalance).toFixed(2)}) couldn't cover the amount of ${Number(record.amount).toFixed(2)}.`
       );
 
       return resultingBalance;
