@@ -1,24 +1,16 @@
 const express = require('express');
 const fundRouter = require('./fundRouter');
-const userRouter = require('./userRouter');
 const recordRouter = require('./recordRouter');
-const { checkJWT, checkScopes } = require('../middleware/checkAuthorization.js');
-const { demoUser } = require('../config/auth.js');
+const userRouter = require('./userRouter');
+const { checkJWT, checkScopes, setDemoData } = require('../middleware/checkAuthorization.js');
 
 const router = express.Router();
 
+router.use('/api/fund', checkJWT, checkScopes, fundRouter);
+router.use('/api/record', checkJWT, checkScopes, recordRouter);
 router.use('/api/user', checkJWT, checkScopes, userRouter);
-router.use('/api/funds', checkJWT, checkScopes, fundRouter);
-router.use('/api/records', checkJWT, checkScopes, recordRouter);
-router.use('/api/public', setDemoData);
-router.use('/api/public/user', userRouter);
-router.use('/api/public/funds', fundRouter);
-router.use('/api/public/records', recordRouter);
+router.use('/api/public/fund', setDemoData, fundRouter);
+router.use('/api/public/record', setDemoData, recordRouter);
 router.use('/*', (req, res) => res.sendStatus(404));
-
-function setDemoData(req, res, next) {
-  req.auth = { payload: { sub: demoUser } };
-  next();
-}
 
 module.exports = { router };

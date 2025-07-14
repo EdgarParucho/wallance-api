@@ -1,5 +1,4 @@
 const { DataTypes, Sequelize, Model } = require('sequelize');
-const { USER_TABLE } = require('./userModel');
 const FUND_TABLE = 'funds';
 
 const fundSchema = {
@@ -15,18 +14,12 @@ const fundSchema = {
     field: 'user_id',
     allowNull: false,
     type: DataTypes.STRING,
-    references: {
-      model: USER_TABLE,
-      key: 'id',
-    },
-    onDelete: 'CASCADE',
     required: true
   },
 }
 
 class Fund extends Model {
   static associate(models) {
-    this.belongsTo(models.User, { as: 'user', foreignKey: 'id' });
     this.hasMany(models.Record, { as: 'records', foreignKey: 'fundID' })
     this.hasMany(models.Record, { as: 'assignments', foreignKey: 'otherFundID' })
   }

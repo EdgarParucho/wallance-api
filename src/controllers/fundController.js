@@ -1,12 +1,17 @@
 const FundService = require('../services/fundService');
 const fundService = new FundService();
 
-async function createFund(payload) {
+async function get(payload) {
+  const data = await fundService.get(payload);
+  return data;
+}
+
+async function create(payload) {
   const data = await fundService.create(payload);
   return data;
 }
 
-async function patchFund(payload) {
+async function patch(payload) {
   const data = await fundService.update(payload);
   return data;
 }
@@ -16,4 +21,4 @@ async function deleteFund(payload) {
   return data;
 }
 
-module.exports = { createFund, patchFund, deleteFund };
+module.exports = { get, create, patch, delete: deleteFund };

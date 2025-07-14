@@ -5,15 +5,36 @@ const RecordService = require('./recordService');
 
 const { Fund, Record } = sequelize.models;
 const recordService = new RecordService();
+const DEFAULT_FUND = {
+  name: 'Main',
+  description: 'Base fund, default for credits.',
+  isDefault: true,
+  balance: 0,
+};
 
 class FundService {
 
   constructor() {}
 
+  async get(userID) {
+    try {
+      const data = await Fund.findAll({
+        where: { userID },
+        attributes: { exclude: ["userID"] },
+        raw: true,
+        order: [['name', 'ASC']]
+      });
+      if (data.length) return data;
+      else return this.create({ ...DEFAULT_FUND, userID });
+    } catch (error) {
+      throw new CustomError(500, error.message || "Internal Server Error");
+    }
+  }
+
   async create(body) {
-    const data = await Fund.create({ ...body, isDefault: false }, { raw: true });
+    const data = await Fund.create({ isDefault: false, ...body }, { raw: true });
     delete data.userID;
-    return data;
+    return [data];
   };
 
   async update({ userID, id, updateEntries }) {

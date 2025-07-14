@@ -4,11 +4,11 @@ const id = Joi.string().uuid().required();
 const name = Joi.string().min(4).max(20);
 const description = Joi.string().min(4).max(50);
 
-const createFundSchema = Joi.object({
+const create = Joi.object({
   name: name.required(),
   description: description.required(),
 });
-const updateFundSchema = Joi.object({ name, description });
-const alterFundSchema = Joi.object({ id });
+const update = Joi.object({ name, description });
+const alter = Joi.object({ id });
 
-module.exports = { createFundSchema, updateFundSchema, alterFundSchema };
+module.exports = { create, update, alter };

@@ -1,12 +1,7 @@
 const UserService = require('../services/userService');
 const userService = new UserService();
 
-async function getUser(payload) {
-  const data = userService.getUser(payload);
-  return data;
-}
-
-async function updateUser(payload) {
+async function update(payload) {
   const data = await userService.update(payload);
   return data;
 }
@@ -16,4 +11,4 @@ async function deleteUser(payload) {
   return data;
 }
 
-module.exports = { getUser, updateUser, deleteUser };
+module.exports = { update, delete: deleteUser };
